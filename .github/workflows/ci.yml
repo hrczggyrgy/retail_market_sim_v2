@@ -1,11 +1,37 @@
 name: Reliability checks
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  checks:
+    name: ${{ matrix.check.name }} (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.12"]
+        check:
+          - name: import
+            run: python -c "import retail_market_sim"
+          - name: lint
+            run: ruff check --select F821 app.py sim.py retail_market_sim tests
+          - name: core-tests
+            run: python -m pytest tests/test_invariants.py tests/test_batch2.py -v
+          - name: reliability-tests
+            run: python -m pytest tests/test_reliability.py -v -k "not dashboard"
+          - name: dashboard-test
+            run: python -m pytest tests/test_reliability.py -v -k dashboard
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -14,6 +40,4 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]"
-      - run: python -c "import retail_market_sim"
-      - run: ruff check --select F821 app.py sim.py retail_market_sim tests
-      - run: python -m pytest tests -v
+      - run: ${{ matrix.check.run }}
