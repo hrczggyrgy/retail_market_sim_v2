@@ -46,7 +46,7 @@ def main() -> None:
     (out / "model_settings.json").write_text(json.dumps(settings, indent=2))
     if args.sample:
         trace, products, pairs, categories, retailers, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx = fit_model_mcmc(data, config)
-        rng = np.random.default_rng(config.random_seed)
+        rng = np.random.default_rng(RANDOM_SEED)
         post, market = simulate_scenario_posterior(trace, baseline, products, pairs, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, price_changes, n_draws=500, rng=rng)
         delta = market - baseline["Sales_Revenue"].sum()
         summary = pd.DataFrame([{"mean_revenue": market.mean(), "std_revenue": market.std(ddof=1), "q025_revenue": np.quantile(market, .025), "q975_revenue": np.quantile(market, .975), "mean_delta": delta.mean(), "probability_positive_delta": float((delta > 0).mean())}])
