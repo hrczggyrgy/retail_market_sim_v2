@@ -1,0 +1,15 @@
+Category,Brand,SKU,Elasticity_MAP,Positive_Observations,Observed_Months,Distinct_Prices,Within_Pair_LogPrice_SD,Weak_Price_Support
+Carbonated Soft Drinks,ColaClassic,Cola_2L_Bottle,-3.072777783683755,72,24,58,0.1099879630671537,False
+Carbonated Soft Drinks,ColaClassic,Cola_330ml_Can,-2.874369211122643,72,24,40,0.05631537426767337,False
+Carbonated Soft Drinks,ColaClassic,Cola_500ml_Bottle,-3.0797112434247054,72,24,46,0.053977705333301734,False
+Carbonated Soft Drinks,ColaClassic,Cola_6x330ml_Pack,-3.8710404805899636,72,24,61,0.11290993095773491,False
+Carbonated Soft Drinks,LemonPop,LemonPop_2L,-3.2392543300328422,72,24,56,0.11733528848348625,False
+Carbonated Soft Drinks,LemonPop,LemonPop_500ml,-3.2232785580328973,72,24,45,0.060467509534506296,False
+Energy Drinks,BoostMax,BoostMax_250ml,-2.172691447634806,72,24,54,0.05847699031141154,False
+Energy Drinks,BoostMax,BoostMax_500ml,-2.1070978048245355,72,24,58,0.05780627054965795,False
+Juice,NatureBlend,AppleJuice_1L,-2.480255865905729,72,24,61,0.11234169947230017,False
+Juice,NatureBlend,OrangeJuice_1L,-2.1446512940387445,72,24,58,0.11320323307638026,False
+Water,MountainClear,Mountain_Premium_750ml,-3.23593304912633,72,24,54,0.05270629853588842,False
+Water,PureSpring,PureSpring_1.5L,-4.2787215154614815,72,24,53,0.10551001875139515,False
+Water,PureSpring,PureSpring_500ml,-3.2156788278012387,72,24,36,0.05545584104477819,False
+Water,PureSpring,PureSpring_6x1.5L_Pack,-4.203415939666749,72,24,67,0.10327292349316307,False

@@ -650,14 +650,14 @@ def _pack_size_to_factor(pack_size: str) -> float:
     if pd.isna(pack_size):
         return 1.0
     s = str(pack_size).strip().lower()
-    # Try to extract leading number
     import re
     m = re.match(r"([\d.]+)", s)
     if not m:
         return 1.0
     val = float(m.group(1))
-    # Heuristic: if unit suggests kg/L and value > 10, assume grams/mL -> convert to kg/L
-    if any(u in s for u in ["g", "ml", "mg"]) and val > 10:
+    # Check for gram/milligram/millilitre units (but not kg, l)
+    # Match g, ml, mg after a digit (e.g., "500g", "500 g") or after whitespace
+    if re.search(r"(?<=\d)(g|ml|mg)\b|(?:^|\s)(g|ml|mg)\b", s) and val > 10:
         val = val / 1000.0
     return val
 
@@ -1132,12 +1132,14 @@ def main() -> None:
     brand_decomp = three_factor_decomposition(scenario, ["Category", "Brand"])
     brand_decomp["Portfolio"] = brand_decomp["Category"] + " / " + brand_decomp["Brand"]
 
-    for label, df, key_col in [
-        ("Category", cat_decomp, "Category"),
-        ("Retailer", ret_decomp, "Retailer"),
-        ("Brand", brand_decomp, "Portfolio"),
-    ]:
-        with eval(f"dec_tab_{label.lower()[:3]}"):
+    segments = [
+        (dec_tab_cat, "Category", cat_decomp, "Category"),
+        (dec_tab_ret, "Retailer", ret_decomp, "Retailer"),
+        (dec_tab_brand, "Brand", brand_decomp, "Portfolio"),
+    ]
+
+    for tab, label, df, key_col in segments:
+        with tab:
             st.dataframe(
                 df[[key_col, "R0", "R1", "Revenue_Delta", "Volume_Effect", "Mix_Effect", "Price_Effect", "Decomposition_Sum"]],
                 hide_index=True,

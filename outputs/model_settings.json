@@ -1,0 +1,9 @@
+{
+  "model_version": "retail-map-v1",
+  "prior_elasticity": -1.5,
+  "max_evaluations": 6000,
+  "baseline_period": 24,
+  "baseline_label": "Month 24",
+  "converged": true,
+  "iterations": 169
+}

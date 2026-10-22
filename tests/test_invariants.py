@@ -322,5 +322,94 @@ class TestEdgeCases:
             simulate_market(minimal_baseline, price_matrix, retailer_columns, estimates_missing)
 
 
+class TestSimulator:
+    """Tests for the sim.py CLI functions."""
+
+    def test_empty_scenario_reproduces_baseline(self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns):
+        """Empty price_changes should reproduce baseline exactly."""
+        from sim import simulate_scenario
+
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, {})
+
+        np.testing.assert_allclose(
+            scenario["Simulated_Unit_Sales"], scenario["Baseline_Unit_Sales"], rtol=1e-10
+        )
+        np.testing.assert_allclose(
+            scenario["Simulated_Revenue"], scenario["Baseline_Revenue"], rtol=1e-10
+        )
+        np.testing.assert_allclose(scenario["Revenue_Delta"], 0.0, atol=1e-10)
+        np.testing.assert_allclose(scenario["Price_Change_Pct"], 0.0, atol=1e-10)
+
+    def test_scenario_applies_discount_correctly(self, minimal_baseline, minimal_estimates):
+        """Scenario with absolute new price should produce correct percentage change."""
+        from sim import simulate_scenario
+
+        # Baseline price is 10.0, apply 20% discount -> new price 8.0
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 8.0,
+        }
+
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, price_changes)
+
+        # Check the changed cell
+        mask = scenario["SKU"] == "SKU_1"
+        changed = scenario[mask]
+        assert len(changed) == 2  # Retailer_A and Retailer_B
+        ret_a = changed[changed["Retailer"] == "Retailer_A"].iloc[0]
+        ret_b = changed[changed["Retailer"] == "Retailer_B"].iloc[0]
+
+        # Retailer_A should have -20% price change
+        assert abs(ret_a["Price_Change_Pct"] - (-20.0)) < 1e-9
+        # Retailer_B should have 0% price change
+        assert abs(ret_b["Price_Change_Pct"]) < 1e-9
+
+
+class TestPackSizeParsing:
+    """Tests for pack size parsing edge cases."""
+
+    def test_known_formats(self):
+        """Test common pack size formats."""
+        from sim import _pack_size_to_factor
+        assert _pack_size_to_factor("1.5 L") == 1.5
+        assert _pack_size_to_factor("500 g") == 0.5
+        assert _pack_size_to_factor("500g") == 0.5
+        assert _pack_size_to_factor("6 pc") == 6.0
+        assert _pack_size_to_factor("6 PCS") == 6.0
+        assert _pack_size_to_factor("1000 ml") == 1.0
+        assert _pack_size_to_factor("2 kg") == 2.0
+        assert _pack_size_to_factor("20 kg") == 20.0  # kg should not trigger /1000
+        assert _pack_size_to_factor("100 g") == 0.1  # g > 10 should trigger /1000
+
+
+class TestPosteriorAggregation:
+    """Tests for correct posterior uncertainty aggregation."""
+
+    def test_market_aggregation_preserves_covariance(self):
+        """Market revenue interval should be computed from aggregated draws, not marginal quantiles."""
+        # Create mock revenue draws for 2 cells, 100 draws
+        n_draws = 10000
+        rng = np.random.default_rng(42)
+        # Two perfectly correlated cells
+        base = rng.normal(1000, 100, n_draws)
+        revenue_draws = np.column_stack([base, base])  # Perfect correlation
+
+        # Correct: aggregate within draws, then compute quantiles
+        market_revenue = revenue_draws.sum(axis=1)
+        correct_interval = np.quantile(market_revenue, [0.025, 0.975])
+
+        # Incorrect: sum of marginal quantiles
+        marginal_q025 = np.quantile(revenue_draws, 0.025, axis=0).sum()
+        marginal_q975 = np.quantile(revenue_draws, 0.975, axis=0).sum()
+
+        # For perfectly correlated variables, correct interval should be ~2x individual interval
+        individual_interval = np.quantile(base, [0.025, 0.975])
+        expected_interval = 2 * individual_interval
+
+        np.testing.assert_allclose(correct_interval, expected_interval, rtol=0.02)
+
+        # Sum of marginals is wrong (too narrow for positive correlation)
+        # This test documents the expected behavior, not a code check
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

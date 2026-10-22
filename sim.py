@@ -350,7 +350,7 @@ def fit_model_mcmc(
 def simulate_scenario(
     baseline: pd.DataFrame,
     estimates: pd.DataFrame,
-    price_changes: dict[tuple, float],  # {(cat, ret, brand, sku): new_price}
+    price_changes: dict[tuple, float],  # {(cat, ret, brand, sku): new_price (absolute)}
 ) -> pd.DataFrame:
     """
     Apply price changes to baseline and compute expected response.
@@ -360,7 +360,10 @@ def simulate_scenario(
     result = baseline.copy()
     result = result.merge(estimates[PRODUCT_KEYS + ["Elasticity_MAP"]], on=PRODUCT_KEYS, how="left", validate="many_to_one")
 
-    # Apply price changes
+    # Initialize simulated price to baseline (handles empty price_changes)
+    result["Simulated_Price"] = result["Price"].copy()
+
+    # Apply price changes (absolute new prices)
     for (cat, ret, brand, sku), new_price in price_changes.items():
         mask = (
             (result["Category"] == cat) &
@@ -369,9 +372,6 @@ def simulate_scenario(
             (result["SKU"] == sku)
         )
         result.loc[mask, "Simulated_Price"] = new_price
-
-    # Where no change specified, keep baseline price
-    result["Simulated_Price"] = result["Simulated_Price"].fillna(result["Price"])
 
     p1 = result["Simulated_Price"].to_numpy(dtype=float)
     p0 = result["Price"].to_numpy(dtype=float)
@@ -415,19 +415,30 @@ def simulate_scenario_posterior(
     product_category_idx: np.ndarray,
     price_changes: dict[tuple, float],
     n_draws: int = 500,
-) -> pd.DataFrame:
+    rng: np.random.Generator | None = None,
+) -> tuple[pd.DataFrame, np.ndarray]:
     """
     Simulate scenario using posterior draws for uncertainty quantification.
 
     For each posterior draw d:
       Q1^(d) = Q0 * exp(beta^(d) * log(P1/P0))
     Revenue^(d) = P1 * Q1^(d)
+
+    Returns:
+        result: DataFrame with cell-level posterior summaries
+        market_revenue_draws: (n_draws,) array of total market revenue per draw
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     result = baseline.copy()
     p0 = result["Price"].to_numpy(dtype=float)
     q0 = result["Unit_Sales"].to_numpy(dtype=float)
 
-    # Apply price changes
+    # Initialize simulated price to baseline (handles empty price_changes)
+    result["Simulated_Price"] = result["Price"].copy()
+
+    # Apply price changes (absolute new prices)
     for (cat, ret, brand, sku), new_price in price_changes.items():
         mask = (
             (result["Category"] == cat) &
@@ -436,7 +447,46 @@ def simulate_scenario_posterior(
             (result["SKU"] == sku)
         )
         result.loc[mask, "Simulated_Price"] = new_price
-    result["Simulated_Price"] = result["Simulated_Price"].fillna(result["Price"])
+
+    p1 = result["Simulated_Price"].to_numpy(dtype=float)
+
+    # Map baseline rows to product/pair indices
+    product_lookup = tuple_index(products, PRODUCT_KEYS)
+    pair_lookup = tuple_index(pairs, CELL_KEYS)
+    base_sku_idx = product_lookup.get_indexer(tuple_index(result, PRODUCT_KEYS))
+    base_pair_idx = pair_lookup.get_indexer(tuple_index(result, CELL_KEYS))
+
+    # Extract posterior draws for beta (elasticity)
+    beta_draws = trace.posterior["beta"].values  # (chain, draw, product)
+    beta_draws = beta_draws.reshape(-1, beta_draws.shape[-1])  # (total_draws, product)
+    if n_draws < len(beta_draws):
+        idx = rng.choice(len(beta_draws), n_draws, replace=False)
+        beta_draws = beta_draws[idx]
+
+    # For each draw, compute revenue at cell level
+    revenue_draws = []
+    for b in beta_draws:
+        beta_vals = b[base_sku_idx]
+        log_resp = beta_vals * np.log(p1 / p0)
+        q1_draw = q0 * np.exp(log_resp)
+        r1_draw = p1 * q1_draw
+        revenue_draws.append(r1_draw)
+
+    revenue_draws = np.array(revenue_draws)  # (draws, n_obs)
+
+    # Aggregate to market level WITHIN each draw (preserves covariance)
+    market_revenue_draws = revenue_draws.sum(axis=1)  # (draws,)
+
+    # Cell-level summaries
+    result["Simulated_Revenue_Mean"] = revenue_draws.mean(axis=0)
+    result["Simulated_Revenue_Std"] = revenue_draws.std(axis=0, ddof=1)
+    result["Simulated_Revenue_Q025"] = np.percentile(revenue_draws, 2.5, axis=0)
+    result["Simulated_Revenue_Q975"] = np.percentile(revenue_draws, 97.5, axis=0)
+
+    result["Baseline_Revenue"] = result["Sales_Revenue"]
+    result["Revenue_Delta_Mean"] = result["Simulated_Revenue_Mean"] - result["Baseline_Revenue"]
+
+    return result, market_revenue_draws
     p1 = result["Simulated_Price"].to_numpy(dtype=float)
 
     # Map baseline rows to product/pair indices
@@ -485,7 +535,9 @@ def _pack_size_to_factor(pack_size: str) -> float:
     if not m:
         return 1.0
     val = float(m.group(1))
-    if any(u in s for u in ["g", "ml", "mg"]) and val > 10:
+    # Check for gram/milligram/millilitre units (but not kg, l)
+    # Match g, ml, mg after a digit (e.g., "500g", "500 g") or after whitespace
+    if re.search(r"(?<=\d)(g|ml|mg)\b|(?:^|\s)(g|ml|mg)\b", s) and val > 10:
         val = val / 1000.0
     return val
 
@@ -587,11 +639,22 @@ def main():
     print(f"  Positive elasticities: {fitted['positive_elasticities']}")
     print(f"  Weak support: {fitted['weak_support_count']}")
 
-    # Define scenario
+    # Define scenario: 20% discount on Cola_2L_Bottle at Nexus_Retail_Group
     if args.scenario == "nexus_cola_20pct":
+        # Find baseline price for the target SKU
+        mask = (
+            (baseline["Category"] == "Carbonated Soft Drinks") &
+            (baseline["Retailer"] == "Nexus_Retail_Group") &
+            (baseline["Brand"] == "ColaClassic") &
+            (baseline["SKU"] == "Cola_2L_Bottle")
+        )
+        baseline_price = baseline.loc[mask, "Price"].values[0]
+        new_price = 0.80 * baseline_price  # 20% discount
         price_changes = {
-            ("Carbonated Soft Drinks", "Nexus_Retail_Group", "ColaClassic", "Cola_2L_Bottle"): 0.80,
+            ("Carbonated Soft Drinks", "Nexus_Retail_Group", "ColaClassic", "Cola_2L_Bottle"): new_price,
         }
+        print(f"\nScenario: 20% discount on Cola_2L_Bottle at Nexus_Retail_Group")
+        print(f"  Baseline price: ${baseline_price:.2f} -> New price: ${new_price:.2f}")
     else:
         price_changes = {}
 
@@ -637,16 +700,23 @@ def main():
             print("\nArviZ not installed; skipping MCMC.")
         else:
             print("\nRunning MCMC for posterior uncertainty...")
-            trace, products, pairs, categories, retailers, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx = fit_model_mcmc(data)
-            print("  Sampling posterior predictive for scenario...")
-            post_scenario = simulate_scenario_posterior(
-                trace, baseline, products, pairs, categories, retailers,
-                sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, price_changes
+            trace, products, pairs, categories, retailers, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx = fit_model_mcmc(
+                data, prior_elasticity=args.prior_elasticity
             )
-            r1_post = post_scenario["Simulated_Revenue_Mean"].sum()
-            r1_std = np.sqrt((post_scenario["Simulated_Revenue_Std"]**2).sum())
-            print(f"  Posterior mean revenue: ${r1_post:,.2f} ± ${r1_std:,.2f}")
-            print(f"  95% interval: ${post_scenario['Simulated_Revenue_Q025'].sum():,.2f} - ${post_scenario['Simulated_Revenue_Q975'].sum():,.2f}")
+            print("  Sampling posterior predictive for scenario...")
+            rng = np.random.default_rng(RANDOM_SEED)
+            post_scenario, market_revenue_draws = simulate_scenario_posterior(
+                trace, baseline, products, pairs, categories, retailers,
+                sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, price_changes,
+                n_draws=500, rng=rng
+            )
+            baseline_revenue = baseline["Sales_Revenue"].sum()
+            delta_draws = market_revenue_draws - baseline_revenue
+            prob_positive = (delta_draws > 0).mean()
+            print(f"  Posterior mean revenue: ${market_revenue_draws.mean():,.2f}")
+            print(f"  Posterior std:          ${market_revenue_draws.std(ddof=1):,.2f}")
+            print(f"  95% interval:           ${np.quantile(market_revenue_draws, 0.025):,.2f} - ${np.quantile(market_revenue_draws, 0.975):,.2f}")
+            print(f"  P(ΔRevenue > 0):        {prob_positive:.2%}")
 
     # Save outputs
     out_dir = Path("outputs")
