@@ -618,7 +618,7 @@ def simulate_market(
     result["Price_Change_Pct"] = 100.0 * (p1 / p0 - 1.0)
     result["Revenue_Delta"] = r1 - result["Baseline_Revenue"]
 
-    # Exact SKU-retailer revenue bridge from the repository's Section 9.
+    # Exact SKU-retailer revenue bridge (two-factor, cell-level).
     # Summing these cell-level effects preserves exact market reconciliation.
     result["Price_Effect"] = (p1 - p0) * q1
     result["Volume_Effect"] = (q1 - q0) * p0
@@ -631,7 +631,116 @@ def simulate_market(
     ):
         raise RuntimeError("Price-volume effects do not reconcile to revenue.")
 
+    # Compute equivalized volume for three-factor decomposition at aggregated levels.
+    # Pack_Size is a string like '500 g', '1.5 L', '6 pc'; extract numeric factor.
+    result["Equiv_Volume_Baseline"] = result.apply(
+        lambda row: _pack_size_to_factor(row["Pack_Size"]) * row["Baseline_Unit_Sales"], axis=1
+    )
+    result["Equiv_Volume_Simulated"] = result.apply(
+        lambda row: _pack_size_to_factor(row["Pack_Size"]) * row["Simulated_Unit_Sales"], axis=1
+    )
+    result["Price_Per_Equiv"] = result["Baseline_Revenue"] / result["Equiv_Volume_Baseline"].replace(0, np.nan)
+    result["Simulated_Price_Per_Equiv"] = result["Simulated_Revenue"] / result["Equiv_Volume_Simulated"].replace(0, np.nan)
+
     return result
+
+
+def _pack_size_to_factor(pack_size: str) -> float:
+    """Extract numeric pack-size factor from string (e.g., '500 g' -> 0.5, '1.5 L' -> 1.5, '6 pc' -> 6)."""
+    if pd.isna(pack_size):
+        return 1.0
+    s = str(pack_size).strip().lower()
+    # Try to extract leading number
+    import re
+    m = re.match(r"([\d.]+)", s)
+    if not m:
+        return 1.0
+    val = float(m.group(1))
+    # Heuristic: if unit suggests kg/L and value > 10, assume grams/mL -> convert to kg/L
+    if any(u in s for u in ["g", "ml", "mg"]) and val > 10:
+        val = val / 1000.0
+    return val
+
+
+def three_factor_decomposition(
+    scenario: pd.DataFrame,
+    group_columns: list,
+) -> pd.DataFrame:
+    """
+    Compute Volume / Mix / Price decomposition at an aggregated level.
+
+    Uses the sequential convention (Volume -> Mix -> Price) with equivalized volumes:
+      VE = (Q1 - Q0) * Pbar0
+      ME = Q1 * sum_s (s1_s - s0_s) * P0_s
+      PE = sum_s V1_s * (P1_s - P0_s)
+
+    where Q = sum V (equivalized volume), s = V/Q (share), P = revenue per equiv volume.
+    """
+    # Add equivalized volumes if not present
+    if "Equiv_Volume_Baseline" not in scenario.columns:
+        scenario = scenario.copy()
+        scenario["Equiv_Volume_Baseline"] = scenario.apply(
+            lambda row: _pack_size_to_factor(row["Pack_Size"]) * row["Baseline_Unit_Sales"], axis=1
+        )
+        scenario["Equiv_Volume_Simulated"] = scenario.apply(
+            lambda row: _pack_size_to_factor(row["Pack_Size"]) * row["Simulated_Unit_Sales"], axis=1
+        )
+
+    # Handle empty group_columns (total market)
+    if not group_columns:
+        scenario = scenario.copy()
+        scenario["_total_market"] = 1
+        group_columns = ["_total_market"]
+        drop_total = True
+    else:
+        drop_total = False
+
+    g = scenario.groupby(group_columns, as_index=False, observed=True).agg(
+        Q0=("Equiv_Volume_Baseline", "sum"),
+        Q1=("Equiv_Volume_Simulated", "sum"),
+        R0=("Baseline_Revenue", "sum"),
+        R1=("Simulated_Revenue", "sum"),
+    )
+
+    # Need SKU-level details within each group for Mix and Price
+    detail = scenario.copy()
+
+    # Merge Q1 into detail
+    detail = detail.merge(g[group_columns + ["Q1"]], on=group_columns, how="left")
+
+    detail["s0"] = detail["Equiv_Volume_Baseline"] / detail.groupby(group_columns)["Equiv_Volume_Baseline"].transform("sum")
+    detail["s1"] = detail["Equiv_Volume_Simulated"] / detail.groupby(group_columns)["Equiv_Volume_Simulated"].transform("sum")
+    detail["P0_equiv"] = detail["Baseline_Revenue"] / detail["Equiv_Volume_Baseline"].replace(0, np.nan)
+    detail["P1_equiv"] = detail["Simulated_Revenue"] / detail["Equiv_Volume_Simulated"].replace(0, np.nan)
+
+    # Volume effect: (Q1 - Q0) * (R0/Q0)
+    g["Pbar0"] = g["R0"] / g["Q0"].replace(0, np.nan)
+    g["Volume_Effect"] = (g["Q1"] - g["Q0"]) * g["Pbar0"]
+
+    # Mix effect: Q1 * sum( (s1 - s0) * P0 )
+    mix_detail = detail.groupby(group_columns, as_index=False, observed=True).apply(
+        lambda df: pd.Series({
+            "Mix_Effect": df["Q1"].iloc[0] * ((df["s1"] - df["s0"]) * df["P0_equiv"]).sum()
+        })
+    ).reset_index(drop=True)
+    g = g.merge(mix_detail, on=group_columns, how="left")
+
+    # Price effect: sum( V1 * (P1 - P0) )
+    price_detail = detail.groupby(group_columns, as_index=False, observed=True).apply(
+        lambda df: pd.Series({
+            "Price_Effect": (df["Equiv_Volume_Simulated"] * (df["P1_equiv"] - df["P0_equiv"])).sum()
+        })
+    ).reset_index(drop=True)
+    g = g.merge(price_detail, on=group_columns, how="left")
+
+    # Reconciliation check
+    g["Decomposition_Sum"] = g["Volume_Effect"] + g["Mix_Effect"] + g["Price_Effect"]
+    g["Revenue_Delta"] = g["R1"] - g["R0"]
+
+    if drop_total:
+        g = g.drop(columns=["_total_market"])
+
+    return g
 
 
 def value_shares(
@@ -956,27 +1065,31 @@ def main() -> None:
     )
 
     # -------------------------------------------------------------------------
-    # Exact price-volume waterfall
+    # Three-factor decomposition (Volume -> Mix -> Price) at market level
     # -------------------------------------------------------------------------
-    price_effect = float(scenario["Price_Effect"].sum())
-    volume_effect = float(scenario["Volume_Effect"].sum())
-    reconciliation_error = delta - price_effect - volume_effect
+    market_decomp = three_factor_decomposition(scenario, [])
+    ve = float(market_decomp["Volume_Effect"].iloc[0])
+    me = float(market_decomp["Mix_Effect"].iloc[0])
+    pe = float(market_decomp["Price_Effect"].iloc[0])
+    recon_error = float(market_decomp["Revenue_Delta"].iloc[0] - market_decomp["Decomposition_Sum"].iloc[0])
 
     waterfall = go.Figure(
         go.Waterfall(
             orientation="v",
-            measure=["absolute", "relative", "relative", "total"],
+            measure=["absolute", "relative", "relative", "relative", "total"],
             x=[
                 "Baseline revenue",
-                "Price effect",
                 "Volume effect",
+                "Mix effect",
+                "Price effect",
                 "Simulated revenue",
             ],
-            y=[r0, price_effect, volume_effect, 0],
+            y=[r0, ve, me, pe, 0],
             text=[
                 f"{r0:,.2f}",
-                f"{price_effect:+,.2f}",
-                f"{volume_effect:+,.2f}",
+                f"{ve:+,.2f}",
+                f"{me:+,.2f}",
+                f"{pe:+,.2f}",
                 f"{r1:,.2f}",
             ],
             textposition="outside",
@@ -987,17 +1100,56 @@ def main() -> None:
         )
     )
     waterfall.update_layout(
-        title="Exact revenue bridge: baseline → price → volume → simulated",
+        title="Revenue bridge (Volume → Mix → Price) using equivalized volumes",
         yaxis_title="Revenue",
         showlegend=False,
         margin=dict(t=70, b=40),
     )
     st.plotly_chart(waterfall, use_container_width=True)
     st.caption(
-        f"Price effect: {price_effect:+,.2f} | "
-        f"Volume effect: {volume_effect:+,.2f} | "
-        f"Reconciliation residual: {reconciliation_error:.8f}"
+        f"Volume: {ve:+,.2f} | Mix: {me:+,.2f} | Price: {pe:+,.2f} | "
+        f"Reconciliation residual: {recon_error:.8f}"
     )
+
+    # Also show two-factor cell-level bridge for reference (exact by construction)
+    with st.expander("Two-factor cell-level bridge (exact for matched SKU–retailer cells)"):
+        cell_pe = float(scenario["Price_Effect"].sum())
+        cell_ve = float(scenario["Volume_Effect"].sum())
+        st.write(
+            f"Price effect (Σ(P₁−P₀)Q₁): {cell_pe:+,.2f} | "
+            f"Volume effect (Σ(Q₁−Q₀)P₀): {cell_ve:+,.2f} | "
+            f"Sum: {cell_pe + cell_ve:+,.2f} | ΔRevenue: {delta:+,.2f}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Decomposition by Category / Retailer / Brand
+    # -------------------------------------------------------------------------
+    st.subheader("Decomposition by segment")
+    dec_tab_cat, dec_tab_ret, dec_tab_brand = st.tabs(["By Category", "By Retailer", "By Brand"])
+
+    cat_decomp = three_factor_decomposition(scenario, ["Category"])
+    ret_decomp = three_factor_decomposition(scenario, ["Retailer"])
+    brand_decomp = three_factor_decomposition(scenario, ["Category", "Brand"])
+    brand_decomp["Portfolio"] = brand_decomp["Category"] + " / " + brand_decomp["Brand"]
+
+    for label, df, key_col in [
+        ("Category", cat_decomp, "Category"),
+        ("Retailer", ret_decomp, "Retailer"),
+        ("Brand", brand_decomp, "Portfolio"),
+    ]:
+        with eval(f"dec_tab_{label.lower()[:3]}"):
+            st.dataframe(
+                df[[key_col, "R0", "R1", "Revenue_Delta", "Volume_Effect", "Mix_Effect", "Price_Effect", "Decomposition_Sum"]],
+                hide_index=True,
+                use_container_width=True,
+            )
+            # Stacked bar chart
+            fig = go.Figure()
+            fig.add_trace(go.Bar(name="Volume", x=df[key_col], y=df["Volume_Effect"], marker_color="#64748B"))
+            fig.add_trace(go.Bar(name="Mix", x=df[key_col], y=df["Mix_Effect"], marker_color="#F59E0B"))
+            fig.add_trace(go.Bar(name="Price", x=df[key_col], y=df["Price_Effect"], marker_color="#2563EB"))
+            fig.update_layout(barmode="relative", title=f"{label} decomposition", yaxis_title="Revenue effect", margin=dict(t=50, b=50))
+            st.plotly_chart(fig, use_container_width=True)
 
     # -------------------------------------------------------------------------
     # Market shares: total-market views and category-conditional views

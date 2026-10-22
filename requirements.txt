@@ -1,1 +1,14 @@
-pymc
+# Core dependencies
+numpy>=1.24
+pandas>=2.0
+pymc>=5.10
+arviz>=0.16
+
+# Dashboard
+streamlit>=1.30
+plotly>=5.18
+
+# Development
+pytest>=7.4
+ruff>=0.1
+mypy>=1.7

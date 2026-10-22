@@ -489,36 +489,56 @@ $$
 
 ---
 
-## 10. Multi-SKU Mix Effect
+## 10. Price–Volume–Mix Decomposition
 
-When aggregating across SKUs, revenue changes may also reflect a shift in portfolio composition. Define:
+When aggregating across SKUs, revenue changes reflect price changes, volume changes, and shifts in portfolio composition (mix). For a set of SKUs $\mathcal{S}$ (e.g., all SKUs in a brand–retailer cell), define:
+
+- **Total quantity** (in standardized physical units, e.g., kg or L):
+  $$
+  Q_t = \sum_{s \in \mathcal{S}} V_{t,s}, \qquad t \in \{0,1\}
+  $$
+
+- **Quantity shares**:
+  $$
+  s_{t,s} = \frac{V_{t,s}}{Q_t}, \qquad \sum_{s \in \mathcal{S}} s_{t,s} = 1
+  $$
+
+- **Baseline average price** (revenue per standardized unit):
+  $$
+  \bar P_0 = \frac{R_0}{Q_0} = \sum_{s \in \mathcal{S}} s_{0,s}\, P^V_{0,s}
+  $$
+
+Then an **exact sequential three-factor decomposition** is:
 
 $$
 \begin{aligned}
-PE_{c,r,b}
-&= \sum_{s \in \mathcal{S}_{c,r,b}}
-   (P_{1,c,r,b,s} - P_{0,c,r,b,s})\, Q_{1,c,r,b,s} \\
-VE_{c,r,b}
-&= \sum_{s \in \mathcal{S}_{c,r,b}}
-   (Q_{1,c,r,b,s} - Q_{0,c,r,b,s})\, P_{0,c,r,b,s}
+\text{Volume effect} \quad& VE = (Q_1 - Q_0)\, \bar P_0 \\[4pt]
+\text{Mix effect} \quad& ME = Q_1 \sum_{s \in \mathcal{S}} (s_{1,s} - s_{0,s})\, P^V_{0,s} \\[4pt]
+\text{Price effect} \quad& PE = \sum_{s \in \mathcal{S}} V_{1,s}\, (P^V_{1,s} - P^V_{0,s})
 \end{aligned}
 $$
 
-The mix effect is the residual:
+with the identity:
 
 $$
-ME_{c,r,b}
-= \Delta R_{c,r,b} - PE_{c,r,b} - VE_{c,r,b}
+\Delta R = R_1 - R_0 = VE + ME + PE
 $$
 
-Thus:
+**Interpretation:**
 
-$$
-\Delta R_{c,r,b}
-= PE_{c,r,b} + VE_{c,r,b} + ME_{c,r,b}
-$$
+| Effect | Meaning |
+|--------|---------|
+| $VE$ | Revenue change from total volume growth/decline, valued at baseline average price |
+| $ME$ | Revenue change from shifts in quantity shares toward/away from higher-priced SKUs, at baseline prices |
+| $PE$ | Revenue change from price changes within each SKU, at current volumes |
 
-A positive mix effect means revenue increased because the brand or category shifted toward higher-priced SKUs or pack formats.
+**Properties:**
+- $VE$ uses the **baseline** price; $PE$ uses **current** volumes; $ME$ bridges the two.
+- The allocation depends on the chosen **ordering** (Volume → Mix → Price). Alternative orderings (e.g., Price → Mix → Volume) give numerically different components but the same sum.
+- $ME = 0$ if quantity shares are unchanged ($s_{1,s} = s_{0,s}\ \forall s$).
+- Requires **standardized physical quantities** ($V$); treating different pack formats as interchangeable "units" conflates mix with pack-size effects.
+
+> **Note:** The two-factor price–volume bridge (Section 9) remains exact for any matched cell set. The three-factor decomposition above separates mix explicitly when standardized quantities are available. If only unit counts (not equivalized volumes) are used, the "mix" term conflates true portfolio shifts with pack-size composition changes.
 
 ---
 
@@ -579,7 +599,7 @@ $$
 | Seasonality | $SF_{s,m} = e^{\lambda_{s,m}}$ | Varies by month | Partially; two annual cycles |
 | Trend | $\ln Q_t = \alpha + \tau t$ | + or $-$ | Yes |
 | Pack-size effect | $P^V = P / w_s$ | Usually $-$ for larger packs | Yes |
-| Mix | $ME = \Delta R - PE - VE$ | + or $-$ | Yes |
+| Mix | $ME = Q_1 \sum_s (s_{1,s}-s_{0,s}) P^V_{0,s}$ (sequential) | + or $-$ | Yes, with standardized units |
 | Market share | $MS^R = R_b / R_{\text{category}}$ | + or $-$ | Yes |
 | Retailer effect | $\mu_r$ | + or $-$ | Yes |
 | Residual shock | $u_{t,c,r,b,s}$ | + or $-$ | Yes, but unexplained |
@@ -597,11 +617,10 @@ For each brand, retailer, and category, report:
 2. Revenue-weighted price per unit and price per standardized volume
 3. Value share and volume share
 4. MoM and YoY growth
-5. Price effect and volume effect
-6. Mix effect for multi-SKU brands and categories
-7. Own-price elasticity by SKU or brand
-8. Cross-price elasticities for key substitute pairs
-9. Seasonal indices by month
-10. Residual demand shocks for further investigation
+5. Price effect, volume effect, and mix effect (three-factor decomposition, Section 10)
+6. Own-price elasticity by SKU or brand
+7. Cross-price elasticities for key substitute pairs
+8. Seasonal indices by month
+9. Residual demand shocks for further investigation
 
 > **Caution:** Elasticity estimates from observational POS data are **associations under observed retail conditions**, not guaranteed causal effects. Unobserved promotions, stock changes, and local demand shocks may coincide with price movements.
