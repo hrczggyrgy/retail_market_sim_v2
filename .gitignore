@@ -66,4 +66,5 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
-.tox/outputs/
+.tox/
+outputs/
