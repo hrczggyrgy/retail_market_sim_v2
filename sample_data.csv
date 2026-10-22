@@ -1,0 +1,1009 @@
+Month,Category,Retailer,Brand,SKU,Pack_Size,Unit_Sales,Sales_Revenue,Price
+1,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,6925,7271.25,1.05
+1,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,11868,16377.84,1.38
+1,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,12307,32736.62,2.66
+1,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,8343,35958.33,4.31
+1,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,5903,8028.08,1.36
+1,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,6764,17180.56,2.54
+1,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,16270,14968.4,0.92
+1,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,17735,28376.0,1.6
+1,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4955,36667.0,7.4
+1,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,2820,6288.6,2.23
+1,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5194,16776.62,3.23
+1,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,4529,13451.13,2.97
+1,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6816,16835.52,2.47
+1,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4046,16143.54,3.99
+1,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,7146,7288.92,1.02
+1,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,2887,4070.67,1.41
+1,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,8686,23886.5,2.75
+1,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,5794,26768.28,4.62
+1,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4303,6153.29,1.43
+1,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3419,10393.76,3.04
+1,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,13698,11917.26,0.87
+1,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,15064,23198.56,1.54
+1,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3521,25139.94,7.14
+1,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2788,5743.28,2.06
+1,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4286,13243.74,3.09
+1,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4527,13083.03,2.89
+1,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5799,13801.62,2.38
+1,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,3979,15080.41,3.79
+1,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4335,5548.8,1.28
+1,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,5777,9763.13,1.69
+1,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,3636,13344.12,3.67
+1,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,1868,11376.12,6.09
+1,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2645,3808.8,1.44
+1,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,3504,9390.72,2.68
+1,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,7809,7496.64,0.96
+1,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,9619,16256.11,1.69
+1,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2583,20664.0,8.0
+1,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1603,3767.05,2.35
+1,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2653,9099.79,3.43
+1,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2900,9135.0,3.15
+1,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3758,10033.86,2.67
+1,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2580,10707.0,4.15
+2,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,7666,9275.86,1.21
+2,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,10576,16710.08,1.58
+2,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,7380,25534.8,3.46
+2,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3678,21479.52,5.84
+2,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,4293,6611.22,1.54
+2,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,3512,11308.64,3.22
+2,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,13603,12514.76,0.92
+2,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,19216,31129.92,1.62
+2,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4123,31417.26,7.62
+2,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3317,7297.4,2.2
+2,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,7143,17357.49,2.43
+2,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,6625,15105.0,2.28
+2,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6579,16447.5,2.5
+2,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4977,20156.85,4.05
+2,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,5903,6670.39,1.13
+2,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,9552,14423.52,1.51
+2,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,5395,18396.95,3.41
+2,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3221,18005.39,5.59
+2,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4420,6276.4,1.42
+2,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3465,10672.2,3.08
+2,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,12392,10409.28,0.84
+2,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,14458,22409.9,1.55
+2,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3866,27177.98,7.03
+2,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3003,6246.24,2.08
+2,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,6736,15762.24,2.34
+2,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,6260,13959.8,2.23
+2,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6673,15881.74,2.38
+2,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4149,15807.69,3.81
+2,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,3987,5103.36,1.28
+2,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,5703,9809.16,1.72
+2,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,4037,14815.79,3.67
+2,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2081,12631.67,6.07
+2,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2721,4299.18,1.58
+2,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,1886,6431.26,3.41
+2,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,7998,7678.08,0.96
+2,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,9996,17093.16,1.71
+2,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2372,18620.2,7.85
+2,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1912,4416.72,2.31
+2,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2650,9116.0,3.44
+2,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2774,8765.84,3.16
+2,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4043,10875.67,2.69
+2,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2575,10660.5,4.14
+3,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,12718,14116.98,1.11
+3,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,22552,32474.88,1.44
+3,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,17095,48720.75,2.85
+3,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,9740,45972.8,4.72
+3,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,9464,12776.4,1.35
+3,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,9149,23695.91,2.59
+3,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,23039,18891.98,0.82
+3,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,58617,75029.76,1.28
+3,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,12609,76914.9,6.1
+3,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,5378,10809.78,2.01
+3,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,10029,25975.11,2.59
+3,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,10706,26015.58,2.43
+3,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,10055,22020.45,2.19
+3,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,6887,23553.54,3.42
+3,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,6214,7208.24,1.16
+3,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,11658,17836.74,1.53
+3,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,7017,23857.8,3.4
+3,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,2934,16547.76,5.64
+3,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5051,7172.42,1.42
+3,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3478,10816.58,3.11
+3,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,13791,10481.16,0.76
+3,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,37876,44693.68,1.18
+3,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,9048,50578.32,5.59
+3,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,487,1022.7,2.1
+3,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,5547,13090.92,2.36
+3,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,6306,14062.38,2.23
+3,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5895,13971.15,2.37
+3,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4299,16293.21,3.79
+3,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4511,5728.97,1.27
+3,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,7347,12563.37,1.71
+3,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,4146,15132.9,3.65
+3,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2053,12790.19,6.23
+3,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2909,4567.13,1.57
+3,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2211,7495.29,3.39
+3,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,7919,7602.24,0.96
+3,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,9312,16016.64,1.72
+3,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2115,16771.95,7.93
+3,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1679,3912.07,2.33
+3,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2525,8711.25,3.45
+3,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2353,7553.13,3.21
+3,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3269,8597.47,2.63
+3,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2301,9779.25,4.25
+4,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,7576,9242.72,1.22
+4,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,11574,18749.88,1.62
+4,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,7133,25250.82,3.54
+4,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3949,23338.59,5.91
+4,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,5402,7346.72,1.36
+4,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,6763,17313.28,2.56
+4,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,16708,15538.44,0.93
+4,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,19800,32472.0,1.64
+4,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4767,35847.84,7.52
+4,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3231,7205.13,2.23
+4,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,4773,15655.44,3.28
+4,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,5683,17276.32,3.04
+4,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,1464,3645.36,2.49
+4,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4776,19486.08,4.08
+4,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,1130,1276.9,1.13
+4,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,8544,13243.2,1.55
+4,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,5842,19921.22,3.41
+4,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3163,17586.28,5.56
+4,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5585,6869.55,1.23
+4,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,7731,17162.82,2.22
+4,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,13788,11168.28,0.81
+4,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,29492,38044.68,1.29
+4,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,6852,42687.96,6.23
+4,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2508,5367.12,2.14
+4,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4781,14534.24,3.04
+4,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4524,13255.32,2.93
+4,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6006,14594.58,2.43
+4,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,3876,15038.88,3.88
+4,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,2107,2444.12,1.16
+4,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,9996,15293.88,1.53
+4,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,8178,24125.1,2.95
+4,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,5586,27147.96,4.86
+4,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,5282,7447.62,1.41
+4,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,1149,3159.75,2.75
+4,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,13133,11031.72,0.84
+4,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,28150,38284.0,1.36
+4,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,6949,44126.15,6.35
+4,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2788,5882.68,2.11
+4,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,5631,15428.94,2.74
+4,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,4601,11686.54,2.54
+4,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,6443,15141.05,2.35
+4,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,4210,16082.2,3.82
+5,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,8500,10370.0,1.22
+5,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,14044,22470.4,1.6
+5,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,8150,29340.0,3.6
+5,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,4294,25549.3,5.95
+5,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,7349,9774.17,1.33
+5,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,8402,20668.92,2.46
+5,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,16479,14831.1,0.9
+5,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,23765,38736.95,1.63
+5,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,5935,44809.25,7.55
+5,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3736,7621.44,2.04
+5,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,7811,25463.86,3.26
+5,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,5937,17811.0,3.0
+5,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,5649,14574.42,2.58
+5,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4334,17812.74,4.11
+5,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,8621,10000.36,1.16
+5,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,11185,17560.45,1.57
+5,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,7010,23763.9,3.39
+5,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,4212,23166.0,5.5
+5,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5409,6869.43,1.27
+5,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,8532,19197.0,2.25
+5,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,17951,15437.86,0.86
+5,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,19061,28972.72,1.52
+5,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3822,27594.84,7.22
+5,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2810,5957.2,2.12
+5,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4724,14360.96,3.04
+5,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4717,13396.28,2.84
+5,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,4835,10346.9,2.14
+5,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,3935,13890.55,3.53
+5,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,7140,8139.6,1.14
+5,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,11962,18182.24,1.52
+5,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,10369,31107.0,3.0
+5,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,6416,31823.36,4.96
+5,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,5856,8256.96,1.41
+5,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,5371,14609.12,2.72
+5,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,16003,13762.58,0.86
+5,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,30141,41293.17,1.37
+5,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,7854,50736.84,6.46
+5,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2999,6417.86,2.14
+5,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,5583,15409.08,2.76
+5,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,5510,14050.5,2.55
+5,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,5146,12556.24,2.44
+5,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,3872,14636.16,3.78
+6,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,16144,17435.52,1.08
+6,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,26628,39143.16,1.47
+6,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,23175,65585.25,2.83
+6,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,12381,59057.37,4.77
+6,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,10380,14116.8,1.36
+6,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,11556,30507.84,2.64
+6,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,34934,28995.22,0.83
+6,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,70623,90397.44,1.28
+6,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,18532,114342.44,6.17
+6,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,7938,15876.0,2.0
+6,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,12163,31623.8,2.6
+6,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,12713,31019.72,2.44
+6,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,10156,23358.8,2.3
+6,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,7462,27087.06,3.63
+6,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,8750,9100.0,1.04
+6,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,12906,18455.58,1.43
+6,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,13460,37957.2,2.82
+6,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,7969,36896.47,4.63
+6,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5178,7559.88,1.46
+6,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3774,11623.92,3.08
+6,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,18458,15873.88,0.86
+6,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,24652,37964.08,1.54
+6,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,5085,36967.95,7.27
+6,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3546,7659.36,2.16
+6,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,7420,19217.8,2.59
+6,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,7484,18410.64,2.46
+6,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,1373,3377.58,2.46
+6,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4333,16682.05,3.85
+6,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,5462,7045.98,1.29
+6,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,8461,14214.48,1.68
+6,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,5420,19891.4,3.67
+6,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2827,17442.59,6.17
+6,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3814,5492.16,1.44
+6,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,4969,13764.13,2.77
+6,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,11174,10615.3,0.95
+6,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,12771,21966.12,1.72
+6,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,3563,28218.96,7.92
+6,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2226,4607.82,2.07
+6,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,4663,13242.92,2.84
+6,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,4745,12621.7,2.66
+6,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4291,11585.7,2.7
+6,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2582,10999.32,4.26
+7,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,17181,19070.91,1.11
+7,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,22408,33163.84,1.48
+7,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,2489,7018.98,2.82
+7,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,14106,65733.96,4.66
+7,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,12924,17705.88,1.37
+7,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,12542,32483.78,2.59
+7,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,34641,28405.62,0.82
+7,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,71358,93478.98,1.31
+7,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,18937,117977.51,6.23
+7,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,6998,14205.94,2.03
+7,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,14336,37847.04,2.64
+7,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,13034,32454.66,2.49
+7,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,9001,20342.26,2.26
+7,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,7256,26049.04,3.59
+7,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,8621,9914.15,1.15
+7,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,15036,23456.16,1.56
+7,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,8641,28774.53,3.33
+7,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,4348,24957.52,5.74
+7,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,6981,10122.45,1.45
+7,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,4160,13062.4,3.14
+7,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,18225,15673.5,0.86
+7,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,25140,38715.6,1.54
+7,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,4835,35488.9,7.34
+7,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,4231,9181.27,2.17
+7,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,6047,18624.76,3.08
+7,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,5348,15402.24,2.88
+7,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5262,12786.66,2.43
+7,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4258,16393.3,3.85
+7,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4971,6313.17,1.27
+7,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,7927,13713.71,1.73
+7,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,4898,18171.58,3.71
+7,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,804,4992.84,6.21
+7,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,4099,6517.41,1.59
+7,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2745,9305.55,3.39
+7,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,11678,11210.88,0.96
+7,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,17114,28751.52,1.68
+7,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,3873,30557.97,7.89
+7,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2430,5686.2,2.34
+7,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,861,2996.28,3.48
+7,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,3651,11756.22,3.22
+7,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4001,10642.66,2.66
+7,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2394,10078.74,4.21
+8,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,10062,12376.26,1.23
+8,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,14571,24042.15,1.65
+8,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,2441,8787.6,3.6
+8,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,4955,28887.65,5.83
+8,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,6209,9623.95,1.55
+8,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,5194,16984.38,3.27
+8,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,23158,21768.52,0.94
+8,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,26084,43299.44,1.66
+8,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,6016,46323.2,7.7
+8,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,4667,10314.07,2.21
+8,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,6902,22431.5,3.25
+8,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,6284,19229.04,3.06
+8,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,7727,19935.66,2.58
+8,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4821,19717.89,4.09
+8,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,13937,14912.59,1.07
+8,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,23275,33050.5,1.42
+8,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,21725,59743.75,2.75
+8,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,11804,52763.88,4.47
+8,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,8917,11859.61,1.33
+8,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,10262,25655.0,2.5
+8,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,29514,23316.06,0.79
+8,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,67009,81750.98,1.22
+8,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,17054,98572.12,5.78
+8,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,5800,11194.0,1.93
+8,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,12949,32243.01,2.49
+8,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,12229,28738.15,2.35
+8,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,9905,22088.15,2.23
+8,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,6329,22088.21,3.49
+8,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,5151,6644.79,1.29
+8,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,7312,12503.52,1.71
+8,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,5091,19447.62,3.82
+8,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2719,17020.94,6.26
+8,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3700,5994.0,1.62
+8,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,3019,10234.41,3.39
+8,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,10775,9805.25,0.91
+8,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,19721,28201.03,1.43
+8,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,5574,38070.42,6.83
+8,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2183,5239.2,2.4
+8,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,3272,11092.08,3.39
+8,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,3410,11014.3,3.23
+8,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4366,11744.54,2.69
+8,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2784,11887.68,4.27
+9,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,9378,11816.28,1.26
+9,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,15001,24151.61,1.61
+9,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,7088,25729.44,3.63
+9,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,4254,25481.46,5.99
+9,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,6346,8884.4,1.4
+9,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,7055,18977.95,2.69
+9,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,15351,13969.41,0.91
+9,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,21542,35759.72,1.66
+9,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4879,38202.57,7.83
+9,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3940,9062.0,2.3
+9,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,9979,24548.34,2.46
+9,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,9732,21799.68,2.24
+9,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6776,17211.04,2.54
+9,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4604,18600.16,4.04
+9,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,7683,8835.45,1.15
+9,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,12825,19622.25,1.53
+9,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,7411,24975.07,3.37
+9,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3788,21250.68,5.61
+9,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5114,7364.16,1.44
+9,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3701,11695.16,3.16
+9,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,17025,14982.0,0.88
+9,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,21780,34194.6,1.57
+9,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3735,27526.95,7.37
+9,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2846,6061.98,2.13
+9,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4633,14686.61,3.17
+9,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4391,13085.18,2.98
+9,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6380,15375.8,2.41
+9,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4096,15687.68,3.83
+9,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,7764,9083.88,1.17
+9,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,11933,18496.15,1.55
+9,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,11806,35418.0,3.0
+9,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,6402,31753.92,4.96
+9,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,5211,7503.84,1.44
+9,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,5238,14614.02,2.79
+9,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,17170,15109.6,0.88
+9,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,32925,45107.25,1.37
+9,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,8496,54799.2,6.45
+9,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2973,6451.41,2.17
+9,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,5969,16474.44,2.76
+9,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,5489,14271.4,2.6
+9,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,5710,13704.0,2.4
+9,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,4073,15518.13,3.81
+10,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,8083,9861.26,1.22
+10,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,12314,19948.68,1.62
+10,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,6946,25352.9,3.65
+10,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,4141,24887.41,6.01
+10,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,1988,3121.16,1.57
+10,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,3729,12193.83,3.27
+10,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,19175,17641.0,0.92
+10,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,23832,39561.12,1.66
+10,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,5394,42127.14,7.81
+10,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3432,7756.32,2.26
+10,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,6099,19882.74,3.26
+10,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,5396,16619.68,3.08
+10,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,7079,16494.07,2.33
+10,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4442,16080.04,3.62
+10,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,6656,7720.96,1.16
+10,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,9155,14556.45,1.59
+10,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,6530,22136.7,3.39
+10,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3238,18165.18,5.61
+10,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4989,7234.05,1.45
+10,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3302,10533.38,3.19
+10,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,13942,12268.96,0.88
+10,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,17872,27701.6,1.55
+10,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3813,28139.94,7.38
+10,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2954,5642.14,1.91
+10,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,5258,16773.02,3.19
+10,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,5292,15452.64,2.92
+10,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6543,16030.35,2.45
+10,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4667,18061.29,3.87
+10,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4284,5526.36,1.29
+10,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,5858,10310.08,1.76
+10,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,4826,17952.72,3.72
+10,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2299,14506.69,6.31
+10,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,877,1429.51,1.63
+10,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2063,7137.98,3.46
+10,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,9483,9388.17,0.99
+10,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,10709,18847.84,1.76
+10,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2474,19693.04,7.96
+10,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1923,4634.43,2.41
+10,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,3138,10826.1,3.45
+10,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,3153,10373.37,3.29
+10,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3929,10686.88,2.72
+10,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2814,12240.9,4.35
+11,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,7047,8667.81,1.23
+11,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,11223,18517.95,1.65
+11,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,6215,22498.3,3.62
+11,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3622,21913.1,6.05
+11,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,5189,8094.84,1.56
+11,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,3314,10969.34,3.31
+11,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,15610,14673.4,0.94
+11,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,2507,4186.69,1.67
+11,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,1678,12786.36,7.62
+11,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3835,8590.4,2.24
+11,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,6289,17168.97,2.73
+11,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,6073,15607.61,2.57
+11,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6677,17560.51,2.63
+11,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4191,17350.74,4.14
+11,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,1988,2385.6,1.2
+11,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,9534,14873.04,1.56
+11,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,6319,21800.55,3.45
+11,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,2921,16591.28,5.68
+11,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4187,6113.02,1.46
+11,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,2833,9037.27,3.19
+11,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,10546,9175.02,0.87
+11,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,14983,23972.8,1.6
+11,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3049,22867.5,7.5
+11,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,418,907.06,2.17
+11,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4253,13396.95,3.15
+11,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,3852,11324.88,2.94
+11,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5483,11788.45,2.15
+11,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4274,15001.74,3.51
+11,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,3730,4886.3,1.31
+11,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,5308,9342.08,1.76
+11,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,3724,14188.44,3.81
+11,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2001,12806.4,6.4
+11,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2202,3280.98,1.49
+11,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,3221,9051.01,2.81
+11,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,9387,9105.39,0.97
+11,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,8339,14760.03,1.77
+11,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2104,17210.72,8.18
+11,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,600,1410.0,2.35
+11,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2644,9174.68,3.47
+11,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2591,8524.39,3.29
+11,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4020,10773.6,2.68
+11,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2754,12117.6,4.4
+12,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,5738,7115.12,1.24
+12,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,9221,15306.86,1.66
+12,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,4653,16797.33,3.61
+12,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3320,19687.6,5.93
+12,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,4077,6360.12,1.56
+12,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,3381,10988.25,3.25
+12,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,13612,12795.28,0.94
+12,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,14609,24689.21,1.69
+12,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,3572,28147.36,7.88
+12,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,2574,5817.24,2.26
+12,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,4449,14859.66,3.34
+12,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,3587,11155.57,3.11
+12,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,2450,6321.0,2.58
+12,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,3885,15850.8,4.08
+12,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,5300,6360.0,1.2
+12,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,9238,14411.28,1.56
+12,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,4528,15893.28,3.51
+12,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,2622,15102.72,5.76
+12,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,3656,5520.56,1.51
+12,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,2842,8867.04,3.12
+12,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,12083,10874.7,0.9
+12,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,13413,21326.67,1.59
+12,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3967,28760.75,7.25
+12,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2815,6080.4,2.16
+12,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,3660,11529.0,3.15
+12,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,3605,10490.55,2.91
+12,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6077,14767.11,2.43
+12,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4013,15730.96,3.92
+12,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,5319,6223.23,1.17
+12,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,8431,12983.74,1.54
+12,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,7000,21070.0,3.01
+12,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,4147,20817.94,5.02
+12,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2994,4401.18,1.47
+12,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,3655,10307.1,2.82
+12,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,11285,10043.65,0.89
+12,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,22920,31858.8,1.39
+12,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,5679,37424.61,6.59
+12,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2616,5598.24,2.14
+12,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,3483,9787.23,2.81
+12,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,4171,10886.31,2.61
+12,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4926,11871.66,2.41
+12,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,3351,13068.9,3.9
+13,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,6679,8415.54,1.26
+13,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,8587,14340.29,1.67
+13,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,5668,20688.2,3.65
+13,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,2674,16097.48,6.02
+13,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,3860,5983.0,1.55
+13,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,2833,9462.22,3.34
+13,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,13095,12309.3,0.94
+13,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,14605,24536.4,1.68
+13,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,3523,27937.39,7.93
+13,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,2305,5186.25,2.25
+13,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,3853,13061.67,3.39
+13,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,4510,14026.1,3.11
+13,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,2299,5977.4,2.6
+13,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4649,19014.41,4.09
+13,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,8980,9608.6,1.07
+13,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,12964,18797.8,1.45
+13,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,11436,32020.8,2.8
+13,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,8005,36182.6,4.52
+13,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5965,7933.45,1.33
+13,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,6096,15483.84,2.54
+13,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,18823,15246.63,0.81
+13,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,37517,47646.59,1.27
+13,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3285,19315.8,5.88
+13,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3798,7558.02,1.99
+13,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,8001,19842.48,2.48
+13,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,1703,4087.2,2.4
+13,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,7804,17637.04,2.26
+13,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,5983,21478.97,3.59
+13,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,3614,4806.62,1.33
+13,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,4482,7753.86,1.73
+13,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,2887,10970.6,3.8
+13,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,200,1278.0,6.39
+13,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,1797,2983.02,1.66
+13,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,1676,5966.56,3.56
+13,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,7211,7211.0,1.0
+13,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,10007,17111.97,1.71
+13,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,1894,15568.68,8.22
+13,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1481,3509.97,2.37
+13,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2281,7937.88,3.48
+13,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2005,6476.15,3.23
+13,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3011,8250.14,2.74
+13,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2554,10931.12,4.28
+14,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,6924,8793.48,1.27
+14,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,10706,17664.9,1.65
+14,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,5486,19969.04,3.64
+14,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3704,22372.16,6.04
+14,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,3641,5206.63,1.43
+14,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,5437,14244.94,2.62
+14,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,14541,13523.13,0.93
+14,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,1762,2995.4,1.7
+14,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,3420,27052.2,7.91
+14,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3298,7486.46,2.27
+14,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5049,16863.66,3.34
+14,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,4992,15375.36,3.08
+14,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6187,13611.4,2.2
+14,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4635,16268.85,3.51
+14,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,6975,8091.0,1.16
+14,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,7460,11786.8,1.58
+14,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,5135,17921.15,3.49
+14,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3281,18898.56,5.76
+14,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4031,5965.88,1.48
+14,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3197,10198.43,3.19
+14,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,12415,11173.5,0.9
+14,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,4716,7498.44,1.59
+14,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3646,27527.3,7.55
+14,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2368,4617.6,1.95
+14,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,3954,12494.64,3.16
+14,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4259,12564.05,2.95
+14,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5838,14653.38,2.51
+14,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4216,16821.84,3.99
+14,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4162,5493.84,1.32
+14,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,5652,10060.56,1.78
+14,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,3011,11381.58,3.78
+14,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,1901,11976.3,6.3
+14,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2375,3895.0,1.64
+14,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,1753,6117.97,3.49
+14,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,8239,8156.61,0.99
+14,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,10863,18792.99,1.73
+14,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2040,16789.2,8.23
+14,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1615,3908.3,2.42
+14,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2750,9652.5,3.51
+14,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2320,7725.6,3.33
+14,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3621,9957.75,2.75
+14,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2237,9977.02,4.46
+15,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,7257,9216.39,1.27
+15,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,11891,19857.97,1.67
+15,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,7418,27075.7,3.65
+15,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3659,21990.59,6.01
+15,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,5348,8449.84,1.58
+15,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,4193,13962.69,3.33
+15,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,16707,15704.58,0.94
+15,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,22511,37368.26,1.66
+15,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4153,32891.76,7.92
+15,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3518,8056.22,2.29
+15,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5738,19050.16,3.32
+15,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,4194,13253.04,3.16
+15,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6364,16928.24,2.66
+15,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,5276,22211.96,4.21
+15,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,7763,9160.34,1.18
+15,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,9964,15842.76,1.59
+15,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,6536,22353.12,3.42
+15,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,2875,16818.75,5.85
+15,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5900,8791.0,1.49
+15,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,2639,8523.97,3.23
+15,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,16153,14376.17,0.89
+15,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,16843,26948.8,1.6
+15,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,4245,32134.65,7.57
+15,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3117,6826.23,2.19
+15,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,5090,16338.9,3.21
+15,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4993,14729.35,2.95
+15,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6190,15598.8,2.52
+15,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4639,18463.22,3.98
+15,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4833,6331.23,1.31
+15,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,5632,9968.64,1.77
+15,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,3867,14926.62,3.86
+15,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2010,12663.0,6.3
+15,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2790,4631.4,1.66
+15,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2223,7647.12,3.44
+15,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,9238,7852.3,0.85
+15,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,26329,34227.7,1.3
+15,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,7232,44621.44,6.17
+15,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2265,4756.5,2.1
+15,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2710,9457.9,3.49
+15,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,1100,3641.0,3.31
+15,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4067,11021.57,2.71
+15,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2899,12813.58,4.42
+16,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,6690,8362.5,1.25
+16,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,11236,18651.76,1.66
+16,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,1321,4927.33,3.73
+16,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3493,20923.07,5.99
+16,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,4883,7617.48,1.56
+16,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,3571,11962.85,3.35
+16,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,14564,12670.68,0.87
+16,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,28594,40031.6,1.4
+16,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,8150,53790.0,6.6
+16,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,3087,7192.71,2.33
+16,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5462,18243.08,3.34
+16,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,1606,5107.08,3.18
+16,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6943,17843.51,2.57
+16,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4830,20141.1,4.17
+16,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,6514,6774.56,1.04
+16,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,10712,15103.92,1.41
+16,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,12113,31736.06,2.62
+16,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,7713,32548.86,4.22
+16,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4411,6572.39,1.49
+16,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3592,11314.8,3.15
+16,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,12901,11610.9,0.9
+16,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,14906,23998.66,1.61
+16,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3801,28317.45,7.45
+16,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2148,4704.12,2.19
+16,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4365,14098.95,3.23
+16,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4454,13584.7,3.05
+16,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5467,13448.82,2.46
+16,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4054,15851.14,3.91
+16,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,6140,7245.2,1.18
+16,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,7713,12340.8,1.6
+16,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,2470,7607.6,3.08
+16,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,4991,25404.19,5.09
+16,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,4037,6015.13,1.49
+16,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,4472,12566.32,2.81
+16,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,13948,12413.72,0.89
+16,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,30460,42948.6,1.41
+16,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,6795,44031.6,6.48
+16,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2697,5879.46,2.18
+16,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,4550,12922.0,2.84
+16,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,4528,12089.76,2.67
+16,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,5532,13442.76,2.43
+16,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,4336,16910.4,3.9
+17,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,9756,12390.12,1.27
+17,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,13153,21833.98,1.66
+17,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,8537,31757.64,3.72
+17,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,3854,23933.34,6.21
+17,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,6665,10464.05,1.57
+17,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,913,3122.46,3.42
+17,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,20954,19487.22,0.93
+17,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,23533,39770.77,1.69
+17,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4132,32973.36,7.98
+17,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,4133,9423.24,2.28
+17,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5706,19286.28,3.38
+17,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,6874,21790.58,3.17
+17,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,8583,22315.8,2.6
+17,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,5048,21151.12,4.19
+17,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,7363,8909.23,1.21
+17,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,12553,19708.21,1.57
+17,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,7583,26085.52,3.44
+17,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3423,19648.02,5.74
+17,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5272,7749.84,1.47
+17,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,4041,12688.74,3.14
+17,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,20214,18394.74,0.91
+17,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,20486,33187.32,1.62
+17,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,4392,32588.64,7.42
+17,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3873,8481.87,2.19
+17,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,5821,18452.57,3.17
+17,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,4905,14665.95,2.99
+17,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6738,17114.52,2.54
+17,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4618,18241.1,3.95
+17,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4833,6427.89,1.33
+17,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,7882,13714.68,1.74
+17,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,4314,16738.32,3.88
+17,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2183,14211.33,6.51
+17,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3114,5106.96,1.64
+17,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2480,8605.6,3.47
+17,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,10853,10853.0,1.0
+17,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,5070,8821.8,1.74
+17,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2573,21278.71,8.27
+17,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2443,5838.77,2.39
+17,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,3806,13625.48,3.58
+17,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,722,2397.04,3.32
+17,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,4146,11650.26,2.81
+17,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2744,11881.52,4.33
+18,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,8612,10678.88,1.24
+18,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,13185,21887.1,1.66
+18,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,7874,29212.54,3.71
+18,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,4601,27974.08,6.08
+18,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,7384,11445.2,1.55
+18,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,4371,14642.85,3.35
+18,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,22731,21821.76,0.96
+18,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,22562,38355.4,1.7
+18,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,4973,39137.51,7.87
+18,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,1306,2729.54,2.09
+18,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5966,20045.76,3.36
+18,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,6806,21302.78,3.13
+18,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,5899,13744.67,2.33
+18,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4490,17286.5,3.85
+18,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,13695,14790.6,1.08
+18,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,23887,33680.67,1.41
+18,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,16751,47740.35,2.85
+18,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,10971,50466.6,4.6
+18,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,10077,13402.41,1.33
+18,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,9318,23854.08,2.56
+18,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,27038,21900.78,0.81
+18,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,63472,80609.44,1.27
+18,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,18081,106497.09,5.89
+18,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,6237,12224.52,1.96
+18,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,10849,27664.95,2.55
+18,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,10919,26533.17,2.43
+18,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,10344,23377.44,2.26
+18,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,5527,20228.82,3.66
+18,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4290,5105.1,1.19
+18,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,8201,13039.59,1.59
+18,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,7141,23065.43,3.23
+18,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,4192,21798.4,5.2
+18,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3381,5511.03,1.63
+18,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2461,8638.11,3.51
+18,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,3264,3296.64,1.01
+18,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,14659,25506.66,1.74
+18,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,3092,25725.44,8.32
+18,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2206,5382.64,2.44
+18,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,3964,13834.36,3.49
+18,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,3598,11981.34,3.33
+18,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3892,10741.92,2.76
+18,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2816,12531.2,4.45
+19,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,15852,18229.8,1.15
+19,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,23057,35738.35,1.55
+19,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,18154,54643.54,3.01
+19,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,11155,54659.5,4.9
+19,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,10778,15196.98,1.41
+19,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,10972,29404.96,2.68
+19,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,31315,26930.9,0.86
+19,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,72130,96654.2,1.34
+19,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,15578,98452.96,6.32
+19,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,8013,16506.78,2.06
+19,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,13359,36470.07,2.73
+19,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,12839,32482.67,2.53
+19,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,10006,24214.52,2.42
+19,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,6943,26383.4,3.8
+19,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,7726,9193.94,1.19
+19,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,4981,7919.79,1.59
+19,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,6811,24179.05,3.55
+19,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,4110,24372.3,5.93
+19,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5115,7825.95,1.53
+19,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3789,12162.69,3.21
+19,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,21875,19687.5,0.9
+19,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,21326,34548.12,1.62
+19,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,1375,10436.25,7.59
+19,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3980,8756.0,2.2
+19,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,5840,18804.8,3.22
+19,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,5369,15892.24,2.96
+19,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,6795,17327.25,2.55
+19,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4701,18709.98,3.98
+19,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4753,6464.08,1.36
+19,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,7201,12601.75,1.75
+19,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,4616,18094.72,3.92
+19,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2407,15597.36,6.48
+19,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3849,6389.34,1.66
+19,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2298,8318.76,3.62
+19,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,10983,10983.0,1.0
+19,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,12899,22960.22,1.78
+19,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2240,18995.2,8.48
+19,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2191,5367.95,2.45
+19,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,4017,14421.03,3.59
+19,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2982,9780.96,3.28
+19,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3692,9008.48,2.44
+19,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2591,10338.09,3.99
+20,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,11690,12508.3,1.07
+20,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,14519,20907.36,1.44
+20,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,17582,45361.56,2.58
+20,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,12630,54435.3,4.31
+20,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,5906,9390.54,1.59
+20,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,3921,13252.98,3.38
+20,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,19142,18567.74,0.97
+20,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,21850,36708.0,1.68
+20,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,5724,44647.2,7.8
+20,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,4130,9746.8,2.36
+20,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,7163,23852.79,3.33
+20,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,6165,19974.6,3.24
+20,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,7228,18937.36,2.62
+20,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4576,19539.52,4.27
+20,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,7658,9036.44,1.18
+20,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,11283,18165.63,1.61
+20,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,6470,23033.2,3.56
+20,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,3313,19016.62,5.74
+20,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,6206,9371.06,1.51
+20,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3919,12736.75,3.25
+20,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,19615,17457.35,0.89
+20,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,4701,7427.58,1.58
+20,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,4285,32694.55,7.63
+20,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3772,8449.28,2.24
+20,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,5265,17111.25,3.25
+20,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,6476,19363.24,2.99
+20,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5419,13655.88,2.52
+20,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4168,16713.68,4.01
+20,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,8743,10666.46,1.22
+20,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,10564,17219.32,1.63
+20,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,9745,30209.5,3.1
+20,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,6394,32417.58,5.07
+20,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,6140,9210.0,1.5
+20,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,5506,15857.28,2.88
+20,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,17500,15575.0,0.89
+20,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,36856,52704.08,1.43
+20,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,11150,72586.5,6.51
+20,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,4352,9400.32,2.16
+20,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,7273,20800.78,2.86
+20,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,6727,18230.17,2.71
+20,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,6281,15451.26,2.46
+20,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,3942,15807.42,4.01
+21,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,8069,10166.94,1.26
+21,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,13359,22843.89,1.71
+21,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,7536,28335.36,3.76
+21,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,4150,25896.0,6.24
+21,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,5909,8449.87,1.43
+21,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,7182,18816.84,2.62
+21,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,19990,19590.2,0.98
+21,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,21740,37392.8,1.72
+21,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,5020,39407.0,7.85
+21,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,4199,9741.68,2.32
+21,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5908,19969.04,3.38
+21,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,1833,5847.27,3.19
+21,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,7527,19796.01,2.63
+21,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,5077,21729.56,4.28
+21,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,8003,9603.6,1.2
+21,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,11627,18719.47,1.61
+21,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,7978,27603.88,3.46
+21,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,4693,27125.54,5.78
+21,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,5263,8052.39,1.53
+21,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,3626,11929.54,3.29
+21,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,15032,12476.56,0.83
+21,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,31678,42131.74,1.33
+21,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,7980,49476.0,6.2
+21,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,3799,8319.81,2.19
+21,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,7000,17710.0,2.53
+21,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,7131,16757.85,2.35
+21,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5855,12939.55,2.21
+21,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4254,15101.7,3.55
+21,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4548,6003.36,1.32
+21,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,6343,11290.54,1.78
+21,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,3800,14858.0,3.91
+21,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,1951,12681.5,6.5
+21,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3293,5565.17,1.69
+21,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2179,7931.56,3.64
+21,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,12251,12496.02,1.02
+21,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,11429,20457.91,1.79
+21,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2878,23916.18,8.31
+21,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1956,4890.0,2.5
+21,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,1750,4970.0,2.84
+21,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,3888,10342.08,2.66
+21,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3973,11283.32,2.84
+21,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2686,12060.14,4.49
+22,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,10735,12345.25,1.15
+22,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,17119,26020.88,1.52
+22,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,16057,48652.71,3.03
+22,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,8552,42845.52,5.01
+22,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,8462,12016.04,1.42
+22,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,8962,24735.12,2.76
+22,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,23732,20884.16,0.88
+22,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,50830,69637.1,1.37
+22,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,12283,78979.69,6.43
+22,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,4752,10121.76,2.13
+22,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,8923,24270.56,2.72
+22,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,8526,22252.86,2.61
+22,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,9706,23682.64,2.44
+22,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,6920,26226.8,3.79
+22,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,6589,7906.8,1.2
+22,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,9062,14680.44,1.62
+22,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,4901,17447.56,3.56
+22,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,2208,13203.84,5.98
+22,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4341,6468.09,1.49
+22,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,2808,9266.4,3.3
+22,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,14764,13435.24,0.91
+22,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,15628,25473.64,1.63
+22,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3241,24761.24,7.64
+22,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2792,6226.16,2.23
+22,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4106,13385.56,3.26
+22,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,3875,11663.75,3.01
+22,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,4919,12592.64,2.56
+22,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,3900,15795.0,4.05
+22,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4023,5511.51,1.37
+22,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,6005,10929.1,1.82
+22,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,3285,13074.3,3.98
+22,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,2016,12983.04,6.44
+22,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2724,4140.48,1.52
+22,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,2908,8433.2,2.9
+22,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,7897,8054.94,1.02
+22,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,9248,16461.44,1.78
+22,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,2058,17451.84,8.48
+22,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1884,4125.96,2.19
+22,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2376,8648.64,3.64
+22,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2737,9059.47,3.31
+22,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3193,8940.4,2.8
+22,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2651,11876.48,4.48
+23,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,5335,6775.45,1.27
+23,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,8946,15387.12,1.72
+23,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,4869,18550.89,3.81
+23,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,2445,15085.65,6.17
+23,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,4100,6601.0,1.61
+23,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,2750,9515.0,3.46
+23,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,13112,12718.64,0.97
+23,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,15768,26490.24,1.68
+23,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,3427,27998.59,8.17
+23,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,2694,6438.66,2.39
+23,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,4163,14112.57,3.39
+23,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,3752,12043.92,3.21
+23,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6119,16704.87,2.73
+23,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4011,17287.41,4.31
+23,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,5362,6595.26,1.23
+23,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,7759,12414.4,1.6
+23,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,4228,15220.8,3.6
+23,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,2209,13099.37,5.93
+23,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,3204,4870.08,1.52
+23,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,2020,6645.8,3.29
+23,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,11803,10976.79,0.93
+23,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,14514,23077.26,1.59
+23,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,2752,20722.56,7.53
+23,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2382,5288.04,2.22
+23,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,4168,13337.6,3.2
+23,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,3657,11080.71,3.03
+23,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5403,13777.65,2.55
+23,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,4084,16703.56,4.09
+23,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,4101,4921.2,1.2
+23,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,6252,10128.24,1.62
+23,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,7345,22989.85,3.13
+23,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,3585,19000.5,5.3
+23,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,3142,4744.42,1.51
+23,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,3314,9643.74,2.91
+23,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,12460,11338.6,0.91
+23,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,23485,33818.4,1.44
+23,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,4483,30125.76,6.72
+23,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,2465,5546.25,2.25
+23,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,3778,10767.3,2.85
+23,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,3969,10517.85,2.65
+23,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,5902,14695.98,2.49
+23,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,3265,13092.65,4.01
+24,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_330ml_Can,0.33,7084,9209.2,1.3
+24,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_500ml_Bottle,0.5,9969,17046.99,1.71
+24,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_2L_Bottle,2.0,5146,19400.42,3.77
+24,Carbonated Soft Drinks,OmniMart_Corp,ColaClassic,Cola_6x330ml_Pack,1.98,2893,18225.9,6.3
+24,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_500ml,0.5,4133,5992.85,1.45
+24,Carbonated Soft Drinks,OmniMart_Corp,LemonPop,LemonPop_2L,2.0,4701,13256.82,2.82
+24,Water,OmniMart_Corp,PureSpring,PureSpring_500ml,0.5,14275,13989.5,0.98
+24,Water,OmniMart_Corp,PureSpring,PureSpring_1.5L,1.5,16459,27980.3,1.7
+24,Water,OmniMart_Corp,PureSpring,PureSpring_6x1.5L_Pack,9.0,3415,27320.0,8.0
+24,Water,OmniMart_Corp,MountainClear,Mountain_Premium_750ml,0.75,2682,6222.24,2.32
+24,Juice,OmniMart_Corp,NatureBlend,OrangeJuice_1L,1.0,5077,17109.49,3.37
+24,Juice,OmniMart_Corp,NatureBlend,AppleJuice_1L,1.0,3679,11919.96,3.24
+24,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_250ml,0.25,6634,17646.44,2.66
+24,Energy Drinks,OmniMart_Corp,BoostMax,BoostMax_500ml,0.5,4131,17721.99,4.29
+24,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_330ml_Can,0.33,5056,5713.28,1.13
+24,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_500ml_Bottle,0.5,6792,10188.0,1.5
+24,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_2L_Bottle,2.0,6988,21103.76,3.02
+24,Carbonated Soft Drinks,Nexus_Retail_Group,ColaClassic,Cola_6x330ml_Pack,1.98,4141,20290.9,4.9
+24,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_500ml,0.5,4347,6607.44,1.52
+24,Carbonated Soft Drinks,Nexus_Retail_Group,LemonPop,LemonPop_2L,2.0,2899,9421.75,3.25
+24,Water,Nexus_Retail_Group,PureSpring,PureSpring_500ml,0.5,14304,13302.72,0.93
+24,Water,Nexus_Retail_Group,PureSpring,PureSpring_1.5L,1.5,14416,23209.76,1.61
+24,Water,Nexus_Retail_Group,PureSpring,PureSpring_6x1.5L_Pack,9.0,3609,27211.86,7.54
+24,Water,Nexus_Retail_Group,MountainClear,Mountain_Premium_750ml,0.75,2443,5472.32,2.24
+24,Juice,Nexus_Retail_Group,NatureBlend,OrangeJuice_1L,1.0,3944,12778.56,3.24
+24,Juice,Nexus_Retail_Group,NatureBlend,AppleJuice_1L,1.0,3218,9814.9,3.05
+24,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_250ml,0.25,5372,13752.32,2.56
+24,Energy Drinks,Nexus_Retail_Group,BoostMax,BoostMax_500ml,0.5,3558,14516.64,4.08
+24,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_330ml_Can,0.33,3631,4938.16,1.36
+24,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_500ml_Bottle,0.5,6083,10888.57,1.79
+24,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_2L_Bottle,2.0,2870,11508.7,4.01
+24,Carbonated Soft Drinks,Apex_Superstores,ColaClassic,Cola_6x330ml_Pack,1.98,1873,12324.34,6.58
+24,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_500ml,0.5,2089,3488.63,1.67
+24,Carbonated Soft Drinks,Apex_Superstores,LemonPop,LemonPop_2L,2.0,1515,5529.75,3.65
+24,Water,Apex_Superstores,PureSpring,PureSpring_500ml,0.5,7784,8017.52,1.03
+24,Water,Apex_Superstores,PureSpring,PureSpring_1.5L,1.5,8415,15399.45,1.83
+24,Water,Apex_Superstores,PureSpring,PureSpring_6x1.5L_Pack,9.0,1909,16054.69,8.41
+24,Water,Apex_Superstores,MountainClear,Mountain_Premium_750ml,0.75,1550,3766.5,2.43
+24,Juice,Apex_Superstores,NatureBlend,OrangeJuice_1L,1.0,2642,9326.26,3.53
+24,Juice,Apex_Superstores,NatureBlend,AppleJuice_1L,1.0,2254,7708.68,3.42
+24,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_250ml,0.25,3600,10008.0,2.78
+24,Energy Drinks,Apex_Superstores,BoostMax,BoostMax_500ml,0.5,2641,11937.32,4.52
