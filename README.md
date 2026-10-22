@@ -3,6 +3,8 @@
 > **Explore how SKU–retailer price changes could affect revenue, demand, and value share.**  
 > This project combines a hierarchical Bayesian demand model with an interactive scenario dashboard, while making uncertainty and the limits of observational POS data explicit.
 
+**🌐 Live demo:** [https://retailmarketsim.streamlit.app/](https://retailmarketsim.streamlit.app/)
+
 ---
 
 ## The Decision
