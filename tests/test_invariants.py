@@ -177,6 +177,19 @@ class TestAnalyticalInvariants:
         assert scenario.loc[0, "Simulated_Unit_Sales"] == 0.0
         assert scenario.loc[0, "Simulated_Revenue"] == 0.0
 
+    def test_zero_demand_cell_does_not_break_decomposition(self, minimal_baseline, minimal_estimates):
+        """A zero-volume cell inside a positive-volume group must still reconcile."""
+        baseline_zero = minimal_baseline.copy()
+        baseline_zero.loc[0, "Unit_Sales"] = 0.0
+        baseline_zero.loc[0, "Sales_Revenue"] = 0.0
+        scenario = simulate_scenario(
+            baseline_zero, minimal_estimates, {("Beverages", "Retailer_B", "Brand_X", "SKU_1"): 9.0}
+        )
+        decomp = three_factor_decomposition(scenario, [])
+        np.testing.assert_allclose(
+            decomp["Decomposition_Sum"].iloc[0], decomp["Revenue_Delta"].iloc[0], rtol=1e-9, atol=1e-6
+        )
+
 
 class TestThreeFactorDecomposition:
     """Tests for the Volume -> Mix -> Price decomposition."""
@@ -241,19 +254,9 @@ class TestThreeFactorDecomposition:
             "Sales_Revenue": [100.0, 300.0],
             "Price": [1.0, 3.0],
         })
-        estimates = pd.DataFrame({
-            "Category": ["Cat", "Cat"],
-            "Brand": ["A", "A"],
-            "SKU": ["S1", "S2"],
-            "Elasticity_MAP": [0.0, 0.0],  # Zero elasticity - prices don't change quantities
-        })
-        # Simulate quantities directly by using a scenario with same prices but different quantities
-        # Since we can't directly set quantities, we'll use a different approach:
-        # Create scenario where prices are unchanged but we manually set quantities for test
-        # Actually, the decomposition is tested on the scenario output, so we need to
-        # construct a scenario DataFrame with the desired simulated quantities
-        
-        # For this test, we manually create the scenario output
+
+        # The decomposition is tested on the scenario output, so construct a
+        # scenario DataFrame with the desired simulated quantities directly.
         scenario = baseline.copy()
         scenario["Baseline_Unit_Sales"] = scenario["Unit_Sales"]
         scenario["Baseline_Price"] = scenario["Price"]
@@ -266,7 +269,7 @@ class TestThreeFactorDecomposition:
         scenario["Elasticity_MAP"] = 0.0
 
         decomp = three_factor_decomposition(scenario, [])
-        
+
         # Expected: VE=0 (Q unchanged at 200), PE=0 (P unchanged), ME=+100
         # Total baseline Q = 200, Pbar0 = 400/200 = 2
         # Baseline share: 0.5 each, Simulated share: 0.25, 0.75
@@ -276,15 +279,18 @@ class TestThreeFactorDecomposition:
         assert abs(decomp["Mix_Effect"].iloc[0] - 100.0) < 1e-6
 
     def test_pack_size_factor_extraction(self):
-        """Pack size numeric litres parsing."""
+        """Pack size parsing accepts numeric litres and rejects anything else."""
         assert _pack_size_to_factor("1.0") == 1.0
         assert _pack_size_to_factor("0.33") == 0.33
         assert _pack_size_to_factor("2.0") == 2.0
         assert _pack_size_to_factor("1.98") == 1.98
         assert _pack_size_to_factor("0.5") == 0.5
-        assert _pack_size_to_factor("") == 1.0
-        assert _pack_size_to_factor(None) == 1.0
-        assert _pack_size_to_factor(np.nan) == 1.0 or np.isnan(_pack_size_to_factor(np.nan))
+
+    @pytest.mark.parametrize("bad", ["", None, np.nan, np.inf, "0", "-1", "invalid", "500 g"])
+    def test_pack_size_factor_rejects_invalid_units(self, bad):
+        """Missing, non-numeric, non-positive or non-litre sizes must not default to 1 litre."""
+        with pytest.raises(ValueError, match="finite positive litres"):
+            _pack_size_to_factor(bad)
 
 
 class TestEdgeCases:
@@ -368,7 +374,6 @@ class TestPosteriorAggregation:
 
     def test_market_aggregation_preserves_covariance(self):
         """Market revenue interval should be computed from aggregated draws, not marginal quantiles."""
-        # Create mock revenue draws for 2 cells, 10000 draws
         n_draws = 10000
         rng = np.random.default_rng(42)
         # Two perfectly correlated cells
@@ -379,17 +384,11 @@ class TestPosteriorAggregation:
         market_revenue = revenue_draws.sum(axis=1)
         correct_interval = np.quantile(market_revenue, [0.025, 0.975])
 
-        # Incorrect: sum of marginal quantiles
-        marginal_q025 = np.quantile(revenue_draws, 0.025, axis=0).sum()
-        marginal_q975 = np.quantile(revenue_draws, 0.975, axis=0).sum()
-
         # For perfectly correlated variables, correct interval should be ~2x individual interval
         individual_interval = np.quantile(base, [0.025, 0.975])
         expected_interval = 2 * individual_interval
 
         np.testing.assert_allclose(correct_interval, expected_interval, rtol=0.02)
-
-        # This test documents the expected behavior for the production code
 
 
 if __name__ == "__main__":
