@@ -8,11 +8,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from app import (
-    simulate_market,
+from retail_market_sim import (
+    simulate_scenario,
     three_factor_decomposition,
     value_shares,
     _pack_size_to_factor,
+    build_named_scenario,
 )
 
 
@@ -30,7 +31,7 @@ def minimal_baseline():
         "Retailer": ["Retailer_A", "Retailer_A", "Retailer_B", "Retailer_B"],
         "Brand": ["Brand_X", "Brand_X", "Brand_X", "Brand_X"],
         "SKU": ["SKU_1", "SKU_2", "SKU_1", "SKU_2"],
-        "Pack_Size": ["1.0 L", "0.5 L", "1.0 L", "0.5 L"],
+        "Pack_Size": ["1.0", "0.5", "1.0", "0.5"],
         "Unit_Sales": [100.0, 200.0, 150.0, 250.0],
         "Sales_Revenue": [1000.0, 1000.0, 1500.0, 1250.0],
         "Price": [10.0, 5.0, 10.0, 5.0],
@@ -48,53 +49,31 @@ def minimal_estimates():
     })
 
 
-@pytest.fixture
-def price_matrix(minimal_baseline):
-    """Editable price matrix with same prices as baseline (no change)."""
-    return minimal_baseline[["Category", "Brand", "SKU", "Price"]].drop_duplicates().assign(
-        **{"Price | Retailer_A": [10.0, 5.0], "Price | Retailer_B": [10.0, 5.0]}
-    )
-
-
-@pytest.fixture
-def retailer_columns():
-    return {"Price | Retailer_A": "Retailer_A", "Price | Retailer_B": "Retailer_B"}
-
-
 # =============================================================================
 # Invariant Tests
 # =============================================================================
 class TestAnalyticalInvariants:
     """Tests for mathematical properties that must always hold."""
 
-    def test_unchanged_prices_reproduce_baseline(
-        self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns
-    ):
+    def test_unchanged_prices_reproduce_baseline(self, minimal_baseline, minimal_estimates):
         """Unchanged prices must exactly reproduce baseline quantities and revenue."""
-        scenario = simulate_market(
-            minimal_baseline, price_matrix, retailer_columns, minimal_estimates
-        )
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, {})
         np.testing.assert_allclose(
             scenario["Simulated_Unit_Sales"], scenario["Baseline_Unit_Sales"], rtol=1e-10
         )
         np.testing.assert_allclose(
             scenario["Simulated_Revenue"], scenario["Baseline_Revenue"], rtol=1e-10
         )
-        np.testing.assert_allclose(
-            scenario["Revenue_Delta"], 0.0, atol=1e-10
-        )
+        np.testing.assert_allclose(scenario["Revenue_Delta"], 0.0, atol=1e-10)
+        np.testing.assert_allclose(scenario["Price_Change_Pct"], 0.0, atol=1e-10)
 
-    def test_cell_level_price_volume_reconciliation(
-        self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns
-    ):
+    def test_cell_level_price_volume_reconciliation(self, minimal_baseline, minimal_estimates):
         """Cell-level Price_Effect + Volume_Effect must equal Revenue_Delta exactly."""
-        # Modify one price
-        price_matrix_changed = price_matrix.copy()
-        price_matrix_changed.loc[0, "Price | Retailer_A"] = 11.0  # 10% increase
-
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_changed, retailer_columns, minimal_estimates
-        )
+        # Modify one price: 10% increase on SKU_1 at Retailer_A
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 11.0,
+        }
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, price_changes)
 
         # Check at each cell
         np.testing.assert_allclose(
@@ -103,16 +82,12 @@ class TestAnalyticalInvariants:
             rtol=1e-9, atol=1e-6
         )
 
-    def test_aggregate_price_volume_reconciliation(
-        self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns
-    ):
+    def test_aggregate_price_volume_reconciliation(self, minimal_baseline, minimal_estimates):
         """Sum of cell-level effects must equal aggregate revenue change."""
-        price_matrix_changed = price_matrix.copy()
-        price_matrix_changed.loc[0, "Price | Retailer_A"] = 11.0
-
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_changed, retailer_columns, minimal_estimates
-        )
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 11.0,
+        }
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, price_changes)
 
         total_delta = scenario["Revenue_Delta"].sum()
         total_pe = scenario["Price_Effect"].sum()
@@ -120,11 +95,9 @@ class TestAnalyticalInvariants:
 
         np.testing.assert_allclose(total_delta, total_pe + total_ve, rtol=1e-9, atol=1e-6)
 
-    def test_shares_sum_to_100(self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns):
+    def test_shares_sum_to_100(self, minimal_baseline, minimal_estimates):
         """Value shares within any denominator must sum to 100%."""
-        scenario = simulate_market(
-            minimal_baseline, price_matrix, retailer_columns, minimal_estimates
-        )
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, {})
 
         # Retailer shares (total market denominator)
         ret_shares = value_shares(scenario, ["Retailer"])
@@ -140,7 +113,7 @@ class TestAnalyticalInvariants:
         assert all(abs(cat_shares["base_sum"] - 100.0) < 1e-9)
         assert all(abs(cat_shares["sim_sum"] - 100.0) < 1e-9)
 
-    def test_zero_elasticity_leaves_quantity_unchanged(self, minimal_baseline, retailer_columns, price_matrix):
+    def test_zero_elasticity_leaves_quantity_unchanged(self, minimal_baseline):
         """Zero elasticity should leave quantity unchanged regardless of price change."""
         estimates_zero = pd.DataFrame({
             "Category": ["Beverages", "Beverages"],
@@ -148,12 +121,10 @@ class TestAnalyticalInvariants:
             "SKU": ["SKU_1", "SKU_2"],
             "Elasticity_MAP": [0.0, 0.0],
         })
-        price_matrix_changed = price_matrix.copy()
-        price_matrix_changed.loc[0, "Price | Retailer_A"] = 20.0  # 100% increase
-
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_changed, retailer_columns, estimates_zero
-        )
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 20.0,  # 100% increase
+        }
+        scenario = simulate_scenario(minimal_baseline, estimates_zero, price_changes)
 
         # Quantity should be unchanged where elasticity is zero
         mask = scenario["Elasticity_MAP"] == 0.0
@@ -163,7 +134,7 @@ class TestAnalyticalInvariants:
             rtol=1e-10
         )
 
-    def test_unit_elasticity_preserves_own_revenue(self, minimal_baseline, retailer_columns, price_matrix):
+    def test_unit_elasticity_preserves_own_revenue(self, minimal_baseline):
         """At elasticity -1, own-cell revenue should remain unchanged under constant elasticity."""
         estimates_unit = pd.DataFrame({
             "Category": ["Beverages", "Beverages"],
@@ -171,12 +142,10 @@ class TestAnalyticalInvariants:
             "SKU": ["SKU_1", "SKU_2"],
             "Elasticity_MAP": [-1.0, -1.0],
         })
-        price_matrix_changed = price_matrix.copy()
-        price_matrix_changed.loc[0, "Price | Retailer_A"] = 11.0  # 10% increase
-
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_changed, retailer_columns, estimates_unit
-        )
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 11.0,  # 10% increase
+        }
+        scenario = simulate_scenario(minimal_baseline, estimates_unit, price_changes)
 
         # For elasticity -1: Q1 = Q0 * (P1/P0)^-1 = Q0 * P0/P1
         # Revenue R1 = P1 * Q1 = P1 * Q0 * P0/P1 = P0 * Q0 = R0
@@ -187,33 +156,22 @@ class TestAnalyticalInvariants:
             rtol=1e-6
         )
 
-    def test_missing_listings_not_created(
-        self, minimal_baseline, minimal_estimates, retailer_columns, price_matrix
-    ):
-        """Prices entered for non-existent SKU-retailer combos should be ignored."""
-        # Create price matrix with extra retailer column that doesn't exist in baseline
-        price_matrix_extra = price_matrix.copy()
-        price_matrix_extra["Price | Retailer_C"] = 8.0  # This retailer doesn't exist in baseline
+    def test_missing_listings_not_created(self, minimal_baseline, minimal_estimates):
+        """Prices for non-existent SKU-retailer combos should raise ValueError."""
+        price_changes = {
+            ("Beverages", "Retailer_C", "Brand_X", "SKU_1"): 8.0,  # Retailer_C doesn't exist
+        }
+        with pytest.raises(ValueError, match="Scenario target not found"):
+            simulate_scenario(minimal_baseline, minimal_estimates, price_changes)
 
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_extra, {**retailer_columns, "Price | Retailer_C": "Retailer_C"},
-            minimal_estimates
-        )
-
-        # Should not have created new Retailer_C rows
-        assert "Retailer_C" not in scenario["Retailer"].values
-        assert len(scenario) == len(minimal_baseline)
-
-    def test_zero_demand_stays_zero(self, minimal_baseline, minimal_estimates, retailer_columns, price_matrix):
+    def test_zero_demand_stays_zero(self, minimal_baseline, minimal_estimates):
         """Zero baseline units should remain zero under multiplicative scenario."""
         baseline_zero = minimal_baseline.copy()
         baseline_zero.loc[0, "Unit_Sales"] = 0.0
         baseline_zero.loc[0, "Sales_Revenue"] = 0.0
-        baseline_zero.loc[0, "Price"] = 10.0  # Price is irrelevant when units=0
+        baseline_zero.loc[0, "Price"] = 10.0
 
-        scenario = simulate_market(
-            baseline_zero, price_matrix, retailer_columns, minimal_estimates
-        )
+        scenario = simulate_scenario(baseline_zero, minimal_estimates, {})
 
         # Zero baseline should stay zero (multiplicative model)
         assert scenario.loc[0, "Simulated_Unit_Sales"] == 0.0
@@ -223,14 +181,12 @@ class TestAnalyticalInvariants:
 class TestThreeFactorDecomposition:
     """Tests for the Volume -> Mix -> Price decomposition."""
 
-    def test_decomposition_sums_to_revenue_delta(self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns):
+    def test_decomposition_sums_to_revenue_delta(self, minimal_baseline, minimal_estimates):
         """VE + ME + PE must equal Revenue_Delta at any aggregation level."""
-        price_matrix_changed = price_matrix.copy()
-        price_matrix_changed.loc[0, "Price | Retailer_A"] = 11.0
-
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_changed, retailer_columns, minimal_estimates
-        )
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 11.0,
+        }
+        scenario = simulate_scenario(minimal_baseline, minimal_estimates, price_changes)
 
         # Market level (empty group_columns = total market)
         decomp = three_factor_decomposition(scenario, [])
@@ -247,7 +203,7 @@ class TestThreeFactorDecomposition:
                 row["Decomposition_Sum"], row["Revenue_Delta"], rtol=1e-9, atol=1e-6
             )
 
-    def test_mix_effect_zero_when_shares_unchanged(self, minimal_baseline, retailer_columns, price_matrix):
+    def test_mix_effect_zero_when_shares_unchanged(self, minimal_baseline):
         """Mix effect should be zero when all SKUs have same elasticity (shares unchanged)."""
         # Same elasticity for all SKUs -> proportional quantity changes -> shares unchanged
         estimates_same = pd.DataFrame({
@@ -256,28 +212,76 @@ class TestThreeFactorDecomposition:
             "SKU": ["SKU_1", "SKU_2"],
             "Elasticity_MAP": [-1.5, -1.5],
         })
-        price_matrix_changed = price_matrix.copy()
-        price_matrix_changed.loc[0, "Price | Retailer_A"] = 11.0
-        price_matrix_changed.loc[1, "Price | Retailer_A"] = 5.5  # Proportional change
-
-        scenario = simulate_market(
-            minimal_baseline, price_matrix_changed, retailer_columns, estimates_same
-        )
+        # Proportional price changes
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 11.0,
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_2"): 5.5,
+        }
+        scenario = simulate_scenario(minimal_baseline, estimates_same, price_changes)
 
         decomp = three_factor_decomposition(scenario, [])
         # Mix should be approximately zero (within numerical precision)
         assert abs(decomp["Mix_Effect"].iloc[0]) < 1e-6
 
+    def test_pure_mix_effect_nonzero(self):
+        """Test pure mix effect with hand-calculated example."""
+        # Two 1L products priced at 1 and 3
+        # Quantities: [100, 100] -> [50, 150]
+        # Expected: VE=0, PE=0, ME=+100
+        baseline = pd.DataFrame({
+            "Month": ["M1", "M1"],
+            "Period": [1, 1],
+            "Season": [0, 0],
+            "Category": ["Cat", "Cat"],
+            "Retailer": ["Ret", "Ret"],
+            "Brand": ["A", "A"],
+            "SKU": ["S1", "S2"],
+            "Pack_Size": ["1.0", "1.0"],
+            "Unit_Sales": [100.0, 100.0],
+            "Sales_Revenue": [100.0, 300.0],
+            "Price": [1.0, 3.0],
+        })
+        estimates = pd.DataFrame({
+            "Category": ["Cat", "Cat"],
+            "Brand": ["A", "A"],
+            "SKU": ["S1", "S2"],
+            "Elasticity_MAP": [0.0, 0.0],  # Zero elasticity - prices don't change quantities
+        })
+        # Simulate quantities directly by using a scenario with same prices but different quantities
+        # Since we can't directly set quantities, we'll use a different approach:
+        # Create scenario where prices are unchanged but we manually set quantities for test
+        # Actually, the decomposition is tested on the scenario output, so we need to
+        # construct a scenario DataFrame with the desired simulated quantities
+        
+        # For this test, we manually create the scenario output
+        scenario = baseline.copy()
+        scenario["Baseline_Unit_Sales"] = scenario["Unit_Sales"]
+        scenario["Baseline_Price"] = scenario["Price"]
+        scenario["Baseline_Revenue"] = scenario["Sales_Revenue"]
+        scenario["Simulated_Price"] = scenario["Price"]
+        scenario["Simulated_Unit_Sales"] = [50.0, 150.0]  # Share shift
+        scenario["Simulated_Revenue"] = scenario["Simulated_Price"] * scenario["Simulated_Unit_Sales"]
+        scenario["Price_Change_Pct"] = 0.0
+        scenario["Revenue_Delta"] = scenario["Simulated_Revenue"] - scenario["Baseline_Revenue"]
+        scenario["Elasticity_MAP"] = 0.0
+
+        decomp = three_factor_decomposition(scenario, [])
+        
+        # Expected: VE=0 (Q unchanged at 200), PE=0 (P unchanged), ME=+100
+        # Total baseline Q = 200, Pbar0 = 400/200 = 2
+        # Baseline share: 0.5 each, Simulated share: 0.25, 0.75
+        # ME = Q1 * sum((s1-s0)*P0) = 200 * ((-0.25)*1 + 0.25*3) = 200 * 0.5 = 100
+        assert abs(decomp["Volume_Effect"].iloc[0] - 0.0) < 1e-6
+        assert abs(decomp["Price_Effect"].iloc[0] - 0.0) < 1e-6
+        assert abs(decomp["Mix_Effect"].iloc[0] - 100.0) < 1e-6
+
     def test_pack_size_factor_extraction(self):
-        """Pack size string parsing should handle common formats."""
-        assert _pack_size_to_factor("1.5 L") == 1.5
-        assert _pack_size_to_factor("500 g") == 0.5
-        assert _pack_size_to_factor("500g") == 0.5
-        assert _pack_size_to_factor("6 pc") == 6.0
-        assert _pack_size_to_factor("6 PCS") == 6.0
-        assert _pack_size_to_factor("1000 ml") == 1.0  # Converts to litres
-        assert _pack_size_to_factor("2 kg") == 2.0
-        assert _pack_size_to_factor("invalid") == 1.0  # Default fallback
+        """Pack size numeric litres parsing."""
+        assert _pack_size_to_factor("1.0") == 1.0
+        assert _pack_size_to_factor("0.33") == 0.33
+        assert _pack_size_to_factor("2.0") == 2.0
+        assert _pack_size_to_factor("1.98") == 1.98
+        assert _pack_size_to_factor("0.5") == 0.5
         assert _pack_size_to_factor("") == 1.0
         assert _pack_size_to_factor(None) == 1.0
         assert _pack_size_to_factor(np.nan) == 1.0 or np.isnan(_pack_size_to_factor(np.nan))
@@ -286,49 +290,46 @@ class TestThreeFactorDecomposition:
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
-    def test_extreme_price_change_rejected(self, minimal_baseline, price_matrix, retailer_columns):
+    def test_extreme_price_change_rejected(self, minimal_baseline):
         """Extreme price changes should raise ValueError."""
-        # Use positive elasticity to trigger extreme response
         estimates_pos = pd.DataFrame({
             "Category": ["Beverages", "Beverages"],
             "Brand": ["Brand_X", "Brand_X"],
             "SKU": ["SKU_1", "SKU_2"],
             "Elasticity_MAP": [2.0, -1.2],  # Positive elasticity for SKU_1
         })
-        price_matrix_extreme = price_matrix.copy()
-        price_matrix_extreme.loc[0, "Price | Retailer_A"] = 1e12  # log_response = 2*log(1e11) ≈ 50.6 > 50
-
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 1e12,
+        }
         with pytest.raises(ValueError, match="extreme demand response"):
-            simulate_market(minimal_baseline, price_matrix_extreme, retailer_columns, estimates_pos)
+            simulate_scenario(minimal_baseline, estimates_pos, price_changes)
 
-    def test_nonfinite_price_rejected(self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns):
+    def test_nonfinite_price_rejected(self, minimal_baseline, minimal_estimates):
         """Non-finite prices should raise ValueError."""
-        price_matrix_bad = price_matrix.copy()
-        price_matrix_bad.loc[0, "Price | Retailer_A"] = np.nan
-
+        price_changes = {
+            ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): np.nan,
+        }
         with pytest.raises(ValueError, match="finite price above zero"):
-            simulate_market(minimal_baseline, price_matrix_bad, retailer_columns, minimal_estimates)
+            simulate_scenario(minimal_baseline, minimal_estimates, price_changes)
 
-    def test_missing_elasticity_rejected(self, minimal_baseline, price_matrix, retailer_columns):
+    def test_missing_elasticity_rejected(self, minimal_baseline):
         """Missing elasticity estimates should raise ValueError."""
         estimates_missing = pd.DataFrame({
             "Category": ["Beverages"],
             "Brand": ["Brand_X"],
             "SKU": ["SKU_1"],
             "Elasticity_MAP": [-1.5],
-        })  # Missing SKU_2
-
+        })
+        price_changes = {}
         with pytest.raises(ValueError, match="elasticity estimates are missing"):
-            simulate_market(minimal_baseline, price_matrix, retailer_columns, estimates_missing)
+            simulate_scenario(minimal_baseline, estimates_missing, price_changes)
 
 
 class TestSimulator:
     """Tests for the sim.py CLI functions."""
 
-    def test_empty_scenario_reproduces_baseline(self, minimal_baseline, minimal_estimates, price_matrix, retailer_columns):
+    def test_empty_scenario_reproduces_baseline(self, minimal_baseline, minimal_estimates):
         """Empty price_changes should reproduce baseline exactly."""
-        from sim import simulate_scenario
-
         scenario = simulate_scenario(minimal_baseline, minimal_estimates, {})
 
         np.testing.assert_allclose(
@@ -342,8 +343,6 @@ class TestSimulator:
 
     def test_scenario_applies_discount_correctly(self, minimal_baseline, minimal_estimates):
         """Scenario with absolute new price should produce correct percentage change."""
-        from sim import simulate_scenario
-
         # Baseline price is 10.0, apply 20% discount -> new price 8.0
         price_changes = {
             ("Beverages", "Retailer_A", "Brand_X", "SKU_1"): 8.0,
@@ -364,29 +363,12 @@ class TestSimulator:
         assert abs(ret_b["Price_Change_Pct"]) < 1e-9
 
 
-class TestPackSizeParsing:
-    """Tests for pack size parsing edge cases."""
-
-    def test_known_formats(self):
-        """Test common pack size formats."""
-        from sim import _pack_size_to_factor
-        assert _pack_size_to_factor("1.5 L") == 1.5
-        assert _pack_size_to_factor("500 g") == 0.5
-        assert _pack_size_to_factor("500g") == 0.5
-        assert _pack_size_to_factor("6 pc") == 6.0
-        assert _pack_size_to_factor("6 PCS") == 6.0
-        assert _pack_size_to_factor("1000 ml") == 1.0
-        assert _pack_size_to_factor("2 kg") == 2.0
-        assert _pack_size_to_factor("20 kg") == 20.0  # kg should not trigger /1000
-        assert _pack_size_to_factor("100 g") == 0.1  # g > 10 should trigger /1000
-
-
 class TestPosteriorAggregation:
     """Tests for correct posterior uncertainty aggregation."""
 
     def test_market_aggregation_preserves_covariance(self):
         """Market revenue interval should be computed from aggregated draws, not marginal quantiles."""
-        # Create mock revenue draws for 2 cells, 100 draws
+        # Create mock revenue draws for 2 cells, 10000 draws
         n_draws = 10000
         rng = np.random.default_rng(42)
         # Two perfectly correlated cells
@@ -407,8 +389,7 @@ class TestPosteriorAggregation:
 
         np.testing.assert_allclose(correct_interval, expected_interval, rtol=0.02)
 
-        # Sum of marginals is wrong (too narrow for positive correlation)
-        # This test documents the expected behavior, not a code check
+        # This test documents the expected behavior for the production code
 
 
 if __name__ == "__main__":
