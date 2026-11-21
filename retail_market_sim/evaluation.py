@@ -99,14 +99,14 @@ def _make_predictions(
         tuple_index(test_with_est, CELL_KEYS)
     )
     
-    # Check for unknown pairs
+    # Check for unknown pairs - mark them for NaN predictions rather than aborting
     unknown_pairs = test_pair_idx == -1
     if unknown_pairs.any():
         unknown_cells = test_with_est.loc[unknown_pairs, CELL_KEYS].drop_duplicates()
-        raise ValueError(f"Test data contains unknown SKU-retailer pairs: {unknown_cells.to_dict('records')}")
+        warnings.warn(f"Test data contains {len(unknown_cells)} unknown SKU-retailer pairs; predictions will be NaN for these.")
     
-    # Get pair price means for test data
-    test_pair_price_means = pair_price_means[test_pair_idx]
+    # Get pair price means for test data (use 0 for unknown pairs to avoid index error)
+    test_pair_price_means = np.where(unknown_pairs, 0.0, pair_price_means[np.where(unknown_pairs, 0, test_pair_idx)])
     
     # Compute log price and centered price
     p0 = test_with_est["Price"].to_numpy(float)
@@ -131,6 +131,7 @@ def _make_predictions(
     beta_category = np.asarray(fitted_point["beta_category"], dtype=float)
     beta_offset = np.asarray(fitted_point["beta_offset"], dtype=float)
     # beta_category is indexed by category, beta_offset by product (SKU)
+    # Compute per-row elasticity: category elasticity + product offset
     beta_map = beta_category[test_cat_idx] + config.beta_offset_scale * beta_offset[sku_idx]
     retailer_effect = np.asarray(fitted_point["retailer_raw"], dtype=float)
     retailer_effect = retailer_effect - retailer_effect.mean()
@@ -144,7 +145,7 @@ def _make_predictions(
         alpha[sku_idx]
         + retailer_effect[pd.Categorical(test_with_est["Retailer"], categories=prepared_train["retailers"]).codes]
         + pair_effect[test_pair_idx]
-        + beta_map[sku_idx] * x_price
+        + beta_map * x_price  # beta_map is already per-row
         + season_effect[test_cat_idx, test_season_idx]
         + trend[test_cat_idx] * time_years
     )
@@ -152,13 +153,16 @@ def _make_predictions(
     q_pred = np.exp(mu)
     q_actual = test_with_est["Unit_Sales"].to_numpy(float)
     
+    # Set NaN predictions for unknown pairs
+    q_pred = np.where(unknown_pairs, np.nan, q_pred)
+    
     # Build predictions DataFrame
     pred_df = test_with_est[CELL_KEYS + ["Period", "Unit_Sales", "Price"]].copy()
     pred_df["Predicted_Unit_Sales"] = q_pred
     pred_df["Actual_Unit_Sales"] = q_actual
     pred_df["Prediction_Error"] = q_pred - q_actual
     pred_df["Abs_Error"] = np.abs(q_pred - q_actual)
-    pred_df["Elasticity"] = beta_map[sku_idx]
+    pred_df["Elasticity"] = beta_map  # per-row elasticity
     
     return pred_df
 
@@ -271,26 +275,34 @@ def evaluate_rolling(
         # MAE in packs
         mae = np.mean(np.abs(pred - actual))
         
-        # WAPE (Weighted Absolute Percentage Error) - only when actual > 0
-        pos_mask = actual > 0
-        if pos_mask.any():
-            wapec = np.sum(np.abs(pred[pos_mask] - actual[pos_mask])) / np.sum(actual[pos_mask])
+        # WAPE (Weighted Absolute Percentage Error) - include all rows in numerator,
+        # require positive aggregate actual for denominator
+        denom = np.sum(actual)
+        if denom > 0:
+            wapec = np.sum(np.abs(pred - actual)) / denom
         else:
             wapec = np.nan
         
-        # Seasonal naive MAE
-        seasonal_mae = np.mean(np.abs(seasonal - actual)) if seasonal.notna().any() else np.nan
+        # Seasonal naive MAE - only on rows where seasonal prediction exists
+        seasonal_valid = seasonal.notna()
+        seasonal_mae = np.mean(np.abs(seasonal[seasonal_valid] - actual[seasonal_valid])) if seasonal_valid.any() else np.nan
         
-        # Last observed MAE
-        last_mae = np.mean(np.abs(last - actual)) if last.notna().any() else np.nan
+        # Last observed MAE - only on rows where last prediction exists
+        last_valid = last.notna()
+        last_mae = np.mean(np.abs(last[last_valid] - actual[last_valid])) if last_valid.any() else np.nan
         
         # Coverage: fraction of test prices within historical range
         historical = train_data.loc[train_data["Unit_Sales"] > 0].groupby(CELL_KEYS)["Price"].agg(["min", "max"]).reset_index()
         test_with_hist = test_data.merge(historical, on=CELL_KEYS, how="left")
-        in_range = (
-            (test_with_hist["Price"] >= test_with_hist["min"]) & 
-            (test_with_hist["Price"] <= test_with_hist["max"])
-        ).mean() if len(test_with_hist) > 0 else 0.0
+        # Only consider rows with historical data for coverage
+        has_hist = test_with_hist["min"].notna() & test_with_hist["max"].notna()
+        if has_hist.any():
+            in_range = (
+                (test_with_hist.loc[has_hist, "Price"] >= test_with_hist.loc[has_hist, "min"]) & 
+                (test_with_hist.loc[has_hist, "Price"] <= test_with_hist.loc[has_hist, "max"])
+            ).mean()
+        else:
+            in_range = 0.0
         
         # Extract elasticities
         estimates_df = fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"]

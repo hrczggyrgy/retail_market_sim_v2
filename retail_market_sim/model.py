@@ -344,14 +344,23 @@ def _run_mcmc_diagnostics(trace, var_names: list[str] | None = None) -> MCMCDiag
     # R-hat
     rhat = az.rhat(post, var_names=var_names)
     rhat_values = []
+    non_finite_count = 0
     for var in rhat.data_vars:
         vals = rhat[var].values.flatten()
         rhat_vals = vals[np.isfinite(vals)]
+        non_finite_count += np.sum(~np.isfinite(vals))
         if len(rhat_vals) > 0:
             rhat_values.extend(rhat_vals.tolist())
     
-    max_rhat = float(np.max(rhat_values)) if rhat_values else 1.0
-    mean_rhat = float(np.mean(rhat_values)) if rhat_values else 1.0
+    if not rhat_values:
+        warnings.warn("All R-hat values are non-finite; setting max_rhat=inf")
+        max_rhat = float('inf')
+        mean_rhat = float('inf')
+    else:
+        if non_finite_count > 0:
+            warnings.warn(f"{non_finite_count} non-finite R-hat values discarded")
+        max_rhat = float(np.max(rhat_values))
+        mean_rhat = float(np.mean(rhat_values))
     
     # Find parameters with highest R-hat
     rhat_by_param = {}

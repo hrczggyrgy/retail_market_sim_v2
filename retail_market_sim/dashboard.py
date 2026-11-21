@@ -206,7 +206,8 @@ def main() -> None:
     if changes:
         # Show detailed edited-cell impact with support status
         selected = scenario.loc[changed].copy()
-        support_cols = edited_support[CELL_KEYS + ["Support_Status", "Historical_Min_Price", "Historical_Max_Price", "Price_Change_Pct", "Elasticity", "Zero_Anchor"]]
+        # Don't include Price_Change_Pct in support_cols to avoid merge conflict (already in selected)
+        support_cols = edited_support[CELL_KEYS + ["Support_Status", "Historical_Min_Price", "Historical_Max_Price", "Elasticity", "Zero_Anchor"]]
         edited_detail = selected[CELL_KEYS + ["Baseline_Price", "Simulated_Price", "Price_Change_Pct", "Revenue_Delta", "Baseline_Unit_Sales", "Simulated_Unit_Sales"]].merge(
             support_cols, on=CELL_KEYS, how="left", validate="one_to_one"
         )
@@ -464,10 +465,22 @@ def main() -> None:
         hist_min = target_row.get("Historical_Min_Price", np.nan)
         hist_max = target_row.get("Historical_Max_Price", np.nan)
         
+        # Default sweep range to historical range when available, otherwise baseline ±50%
+        default_min = max(0.01, hist_min if not np.isnan(hist_min) else baseline_price * 0.5)
+        default_max = min(baseline_price * 2, hist_max if not np.isnan(hist_max) else baseline_price * 1.5)
+        
         # Sweep range
-        sweep_min = st.number_input("Sweep min price", 0.01, baseline_price * 2, max(0.01, baseline_price * 0.5), 0.01, key="sweep_min")
-        sweep_max = st.number_input("Sweep max price", sweep_min, baseline_price * 2, min(baseline_price * 1.5, hist_max if not np.isnan(hist_max) else baseline_price * 2), 0.01, key="sweep_max")
+        sweep_min = st.number_input("Sweep min price", 0.01, baseline_price * 2, default_min, 0.01, key="sweep_min")
+        sweep_max = st.number_input("Sweep max price", sweep_min, baseline_price * 2, default_max, 0.01, key="sweep_max")
         n_points = st.slider("Number of points", 5, 50, 20, key="sweep_points")
+        
+        # Show support status for sweep bounds
+        if not np.isnan(hist_min) and not np.isnan(hist_max):
+            st.caption(f"Historical price range: {hist_min:.2f} – {hist_max:.2f}")
+        elif target_row["Zero_Anchor"]:
+            st.caption("⚠️ Zero anchor — no historical price data; sweep bounds default to ±50% of baseline")
+        else:
+            st.caption("ℹ️ No historical positive-sales data; sweep bounds default to ±50% of baseline")
         
         # Generate sweep
         sweep_prices = np.linspace(sweep_min, sweep_max, n_points)
