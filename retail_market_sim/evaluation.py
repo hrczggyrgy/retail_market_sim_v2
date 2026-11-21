@@ -34,6 +34,9 @@ class FoldResult:
     # Baseline comparison
     seasonal_naive_mae: float
     last_observed_mae: float
+    # Matched-row comparisons (model vs baselines on same finite-prediction rows)
+    model_vs_seasonal_mae: float
+    model_vs_last_mae: float
 
 
 @dataclass
@@ -49,6 +52,8 @@ class EvaluationResult:
     mean_coverage_in_range: float
     mean_seasonal_naive_mae: float
     mean_last_observed_mae: float
+    mean_model_vs_seasonal_mae: float
+    mean_model_vs_last_mae: float
     # Prior sensitivity
     prior_sensitivity: dict[str, Any] | None = None
 
@@ -252,12 +257,8 @@ def evaluate_rolling(
             raise RuntimeError(f"MAP optimization failed for fold {test_period}: {fitted['message']}")
         
         # Prepare training data for predictions
+        # _make_predictions will compute pair_price_means correctly (one mean per unique pair)
         prepared_train = _prepare_training_data(train_data)
-        # Store pair_price_means for later use
-        log_p = np.log(prepared_train["train"]["Price"].to_numpy(float))
-        pair_idx = prepared_train["pair_idx"]
-        pair_price_means = pd.Series(log_p).groupby(pair_idx).transform("mean").to_numpy()
-        prepared_train["pair_price_means"] = pair_price_means
         
         # Make predictions
         predictions = _make_predictions(
@@ -281,8 +282,8 @@ def evaluate_rolling(
         seasonal = pred_merged.loc[mask, "Seasonal_Pred"]
         last = pred_merged.loc[mask, "Last_Pred"]
         
-        # Finite prediction mask - use same mask for both numerator and denominator
-        finite_pred = pred.notna()
+        # Finite prediction mask - use np.isfinite to exclude inf as well as NaN
+        finite_pred = np.isfinite(pred)
         actual_finite = actual[finite_pred]
         pred_finite = pred[finite_pred]
         
@@ -299,13 +300,21 @@ def evaluate_rolling(
         else:
             wapec = np.nan
         
-        # Seasonal naive MAE - only on rows where seasonal prediction exists
-        seasonal_valid = seasonal.notna()
+        # Seasonal naive MAE - only on rows where seasonal prediction exists AND prediction is finite
+        seasonal_valid = np.isfinite(seasonal)
         seasonal_mae = np.mean(np.abs(seasonal[seasonal_valid] - actual[seasonal_valid])) if seasonal_valid.any() else np.nan
         
-        # Last observed MAE - only on rows where last prediction exists
-        last_valid = last.notna()
+        # Last observed MAE - only on rows where last prediction exists AND prediction is finite
+        last_valid = np.isfinite(last)
         last_mae = np.mean(np.abs(last[last_valid] - actual[last_valid])) if last_valid.any() else np.nan
+        
+        # Matched-row MAE: model vs seasonal naive on rows where both have finite predictions
+        both_valid = finite_pred & seasonal_valid
+        model_vs_seasonal_mae = np.mean(np.abs(pred[both_valid] - seasonal[both_valid])) if both_valid.any() else np.nan
+        
+        # Matched-row MAE: model vs last observed on rows where both have finite predictions
+        both_valid_last = finite_pred & last_valid
+        model_vs_last_mae = np.mean(np.abs(pred[both_valid_last] - last[both_valid_last])) if both_valid_last.any() else np.nan
         
         # Coverage: fraction of test prices within historical range
         historical = train_data.loc[train_data["Unit_Sales"] > 0].groupby(CELL_KEYS)["Price"].agg(["min", "max"]).reset_index()
@@ -338,6 +347,8 @@ def evaluate_rolling(
             coverage_in_range=in_range,
             seasonal_naive_mae=seasonal_mae,
             last_observed_mae=last_mae,
+            model_vs_seasonal_mae=model_vs_seasonal_mae,
+            model_vs_last_mae=model_vs_last_mae,
         ))
     
     # Aggregate metrics
@@ -353,6 +364,8 @@ def evaluate_rolling(
         mean_coverage_in_range=np.mean([f.coverage_in_range for f in valid_folds]) if valid_folds else np.nan,
         mean_seasonal_naive_mae=np.nanmean([f.seasonal_naive_mae for f in valid_folds]) if valid_folds else np.nan,
         mean_last_observed_mae=np.nanmean([f.last_observed_mae for f in valid_folds]) if valid_folds else np.nan,
+        mean_model_vs_seasonal_mae=np.nanmean([f.model_vs_seasonal_mae for f in valid_folds]) if valid_folds else np.nan,
+        mean_model_vs_last_mae=np.nanmean([f.model_vs_last_mae for f in valid_folds]) if valid_folds else np.nan,
     )
     
     # Prior sensitivity analysis
@@ -427,6 +440,8 @@ def evaluation_to_dataframe(result: EvaluationResult) -> dict[str, pd.DataFrame]
             "coverage_in_range": f.coverage_in_range,
             "seasonal_naive_mae": f.seasonal_naive_mae,
             "last_observed_mae": f.last_observed_mae,
+            "model_vs_seasonal_mae": f.model_vs_seasonal_mae,
+            "model_vs_last_mae": f.model_vs_last_mae,
         })
     fold_df = pd.DataFrame(fold_data)
     
@@ -486,6 +501,8 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
         print(f"    Coverage in historical range: {f.coverage_in_range:.2%}")
         print(f"    Seasonal naive MAE: {f.seasonal_naive_mae:.2f}" if not np.isnan(f.seasonal_naive_mae) else "    Seasonal naive MAE: N/A")
         print(f"    Last observed MAE: {f.last_observed_mae:.2f}" if not np.isnan(f.last_observed_mae) else "    Last observed MAE: N/A")
+        print(f"    Model vs Seasonal (matched rows): {f.model_vs_seasonal_mae:.2f}" if not np.isnan(f.model_vs_seasonal_mae) else "    Model vs Seasonal (matched rows): N/A")
+        print(f"    Model vs Last (matched rows): {f.model_vs_last_mae:.2f}" if not np.isnan(f.model_vs_last_mae) else "    Model vs Last (matched rows): N/A")
     
     print()
     print("Aggregate metrics:")
@@ -495,6 +512,8 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
     print(f"  Mean coverage in range: {result.mean_coverage_in_range:.2%}")
     print(f"  Mean seasonal naive MAE: {result.mean_seasonal_naive_mae:.2f}" if not np.isnan(result.mean_seasonal_naive_mae) else "  Mean seasonal naive MAE: N/A")
     print(f"  Mean last observed MAE: {result.mean_last_observed_mae:.2f}" if not np.isnan(result.mean_last_observed_mae) else "  Mean last observed MAE: N/A")
+    print(f"  Mean Model vs Seasonal (matched): {result.mean_model_vs_seasonal_mae:.2f}" if not np.isnan(result.mean_model_vs_seasonal_mae) else "  Mean Model vs Seasonal (matched): N/A")
+    print(f"  Mean Model vs Last (matched): {result.mean_model_vs_last_mae:.2f}" if not np.isnan(result.mean_model_vs_last_mae) else "  Mean Model vs Last (matched): N/A")
     
     if result.prior_sensitivity:
         print()

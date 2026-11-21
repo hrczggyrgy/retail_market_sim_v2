@@ -301,13 +301,13 @@ def main() -> None:
             try:
                 trace, products, pairs, categories, retailers, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, diagnostics = fit_model_mcmc(data, config)
             except RuntimeError as e:
-                # Diagnostics failed - clean up run directory and exit without creating a second run
-                print(f"ERROR: MCMC diagnostics failed - {e}")
-                print("Posterior intervals withheld. Previous run (if any) is unaffected.")
+                # Diagnostics failed - clean up run directory and exit with non-zero status
+                print(f"ERROR: MCMC diagnostics failed - {e}", file=sys.stderr)
+                print("Posterior intervals withheld. Previous run (if any) is unaffected.", file=sys.stderr)
                 # Clean up the run directory we created for this failed run
                 if run_dir.exists():
                     shutil.rmtree(run_dir)
-                return
+                sys.exit(1)
             
             # Save diagnostics
             diag_path = run_dir / "mcmc_diagnostics.json"

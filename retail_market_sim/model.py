@@ -329,7 +329,10 @@ class MCMCDiagnostics:
 
 
 def _run_mcmc_diagnostics(trace, var_names: list[str] | None = None) -> MCMCDiagnostics:
-    """Run ArviZ diagnostics on MCMC trace."""
+    """Run ArviZ diagnostics on MCMC trace.
+    
+    Fails closed: any missing or non-finite required diagnostic causes gate failure.
+    """
     import arviz as az
     
     # Get posterior sample
@@ -341,24 +344,26 @@ def _run_mcmc_diagnostics(trace, var_names: list[str] | None = None) -> MCMCDiag
     if "diverging" in post.sample_stats:
         divergences = int(post.sample_stats["diverging"].sum())
     
-    # R-hat
+    # R-hat - fail if any required diagnostic is missing or non-finite
     rhat = az.rhat(post, var_names=var_names)
     rhat_values = []
-    non_finite_count = 0
+    rhat_non_finite = False
     for var in rhat.data_vars:
         vals = rhat[var].values.flatten()
+        if not np.all(np.isfinite(vals)):
+            rhat_non_finite = True
+            # Find which draws are non-finite
+            non_finite_mask = ~np.isfinite(vals)
+            warnings.warn(f"R-hat for {var} has {non_finite_mask.sum()} non-finite values")
         rhat_vals = vals[np.isfinite(vals)]
-        non_finite_count += np.sum(~np.isfinite(vals))
         if len(rhat_vals) > 0:
             rhat_values.extend(rhat_vals.tolist())
     
     if not rhat_values:
-        warnings.warn("All R-hat values are non-finite; setting max_rhat=inf")
         max_rhat = float('inf')
         mean_rhat = float('inf')
+        rhat_non_finite = True
     else:
-        if non_finite_count > 0:
-            warnings.warn(f"{non_finite_count} non-finite R-hat values discarded")
         max_rhat = float(np.max(rhat_values))
         mean_rhat = float(np.mean(rhat_values))
     
@@ -372,16 +377,26 @@ def _run_mcmc_diagnostics(trace, var_names: list[str] | None = None) -> MCMCDiag
     
     max_rhat_params = sorted(rhat_by_param, key=rhat_by_param.get, reverse=True)[:5]
     
-    # ESS
+    # ESS - fail if any required diagnostic is missing or non-finite
     ess = az.ess(post, var_names=var_names, method="bulk")
     tail_ess = az.ess(post, var_names=var_names, method="tail")
     
     bulk_ess_vals = []
     tail_ess_vals = []
     ess_by_param = {}
+    ess_non_finite = False
+    
     for var in ess.data_vars:
         bulk_vals = ess[var].values.flatten()
         tail_vals = tail_ess[var].values.flatten()
+        
+        if not np.all(np.isfinite(bulk_vals)):
+            ess_non_finite = True
+            warnings.warn(f"Bulk ESS for {var} has non-finite values")
+        if not np.all(np.isfinite(tail_vals)):
+            ess_non_finite = True
+            warnings.warn(f"Tail ESS for {var} has non-finite values")
+        
         bulk_finite = bulk_vals[np.isfinite(bulk_vals)]
         tail_finite = tail_vals[np.isfinite(tail_vals)]
         if len(bulk_finite) > 0:
@@ -404,8 +419,11 @@ def _run_mcmc_diagnostics(trace, var_names: list[str] | None = None) -> MCMCDiag
         "min_tail_ess": 400,
     }
     
+    # Fail closed: any non-finite diagnostic means gate failure
     passed_gates = (
         divergences <= gate_criteria["max_divergences"] and
+        not rhat_non_finite and
+        not ess_non_finite and
         max_rhat <= gate_criteria["max_rhat"] and
         min_bulk_ess >= gate_criteria["min_bulk_ess"] and
         min_tail_ess >= gate_criteria["min_tail_ess"]

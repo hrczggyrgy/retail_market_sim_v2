@@ -276,13 +276,15 @@ def test_failed_sampling_run_cleans_up_and_leaves_prior_results(cells, tmp_path,
     assert (first_run_dir / "run_manifest.json").is_file()
     
     # Second run: sampling fails (fit_model_mcmc raises RuntimeError)
-    # Now the CLI handles the error gracefully and exits cleanly
+    # CLI should exit with non-zero status and clean up the failed run directory
     with patch("sys.argv", ["sim.py", "--scenario", "nexus_cola_20pct", "--sample"]), \
             patch.object(sim, "load_data", return_value=(cells, [])), \
             patch.object(sim, "fit_model_map", return_value=fitted), \
             patch.object(sim, "build_named_scenario", return_value=target), \
             patch.object(sim, "fit_model_mcmc", side_effect=RuntimeError("MCMC failed")):
-        sim.main()  # Should exit cleanly without raising
+        with pytest.raises(SystemExit) as exc_info:
+            sim.main()
+        assert exc_info.value.code == 1
     
     # First run directory should still exist and be intact
     assert first_run_dir.exists()
