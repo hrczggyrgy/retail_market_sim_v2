@@ -17,10 +17,13 @@ from retail_market_sim import (
     build_named_scenario, evaluate_rolling, fit_model_map, fit_model_mcmc, get_data_hash, load_data,
     simulate_scenario, simulate_scenario_posterior, three_factor_decomposition, RANDOM_SEED, ModelConfig,
     evaluation_to_dataframe, print_evaluation_summary,
+    simulate_market_scenario, aggregate_to_groups, get_gainers_losers, market_revenue_bridge,
+    MarketConfig as MarketConfigModel,
 )
 
 DATA_PATH = Path(__file__).resolve().parent / "sample_data.csv"
 MODEL_VERSION = "retail-map-v2"
+MARKET_VERSION = "retail-market-v1"
 OUTPUT_ROOT = Path("outputs")
 RUNS_DIR = OUTPUT_ROOT / "runs"
 
@@ -231,14 +234,143 @@ def _run_evaluation_mode(args, data: pd.DataFrame, config: ModelConfig) -> None:
     print(f"Evaluation outputs saved to {run_dir}/")
 
 
+def _run_market_mode(args, data: pd.DataFrame, baseline: pd.DataFrame, fitted: dict, config: ModelConfig) -> None:
+    """Run market substitution scenario mode."""
+    # Determine price changes (same logic as independent mode)
+    if args.changes:
+        price_changes = _load_changes_file(args.changes, baseline)
+        scenario_name = "replay"
+    elif args.scenario == "hold":
+        price_changes = {}
+        scenario_name = "hold"
+    elif args.scenario != "custom":
+        price_changes = build_named_scenario(args.scenario, baseline)
+        scenario_name = args.scenario
+    else:
+        price_changes = {}
+        scenario_name = "custom"
+    
+    # Validate market mode arguments
+    if args.sample:
+        raise ValueError("--sample (MCMC posterior) is not supported in market mode. "
+                         "Market mode uses assumption-based parameters, not fitted elasticities.")
+    
+    # Determine market config
+    if args.market_profile:
+        market_config = MarketConfigModel.get_profile(args.market_profile)
+    else:
+        market_config = MarketConfigModel(
+            k=args.market_k,
+            outside_share=args.market_outside_share,
+        )
+    
+    # Create run directory
+    run_dir = _create_run_dir()
+    run_id = run_dir.name
+    
+    # Compute raw input digest for reproducibility
+    raw_input = DATA_PATH.read_bytes()
+    raw_input_digest = hashlib.sha256(raw_input).hexdigest()[:16]
+    
+    try:
+        # Run market simulation (does not require fitted estimates)
+        scenario = simulate_market_scenario(baseline, price_changes, market_config)
+        
+        # Compute market decomposition (group-level)
+        group_decomp = aggregate_to_groups(scenario)
+        market_bridge = market_revenue_bridge(scenario)
+        gainers_losers = get_gainers_losers(scenario)
+        
+        # Traditional market decomposition for compatibility
+        decomp = three_factor_decomposition(scenario, [])
+        
+        # Settings
+        generated_at = datetime.now(timezone.utc).isoformat()
+        settings = {
+            "model_version": MARKET_VERSION,
+            "data_hash": get_data_hash(data),
+            "raw_input_digest": raw_input_digest,
+            "config": vars(config),
+            "market_config": vars(market_config),
+            "market_profile": args.market_profile,
+            "inference_method": "market_substitution",
+            "baseline_period": int(baseline["Period"].max()),
+            "scenario": scenario_name,
+            "price_changes": [{"cell": list(k), "price": v} for k, v in price_changes.items()],
+            "generated_at": generated_at,
+            "environment": _get_environment_info(),
+            "note": "Market substitution scenario using assumption-based logit model. "
+                    "Parameters k and outside_share are illustrative, not estimated from data. "
+                    "Cross-retailer and cross-category switching not modeled.",
+        }
+        if args.changes:
+            settings["changes_file"] = str(args.changes)
+        
+        # Write core artifacts
+        artifacts = _write_artifacts(run_dir, scenario, fitted["estimates"], decomp, settings)
+        
+        # Write market-specific artifacts
+        group_decomp_path = run_dir / "market_group_decomposition.csv"
+        group_decomp.to_csv(group_decomp_path, index=False)
+        artifacts.append("market_group_decomposition.csv")
+        
+        bridge_path = run_dir / "market_revenue_bridge.json"
+        bridge_path.write_text(json.dumps(market_bridge, indent=2))
+        artifacts.append("market_revenue_bridge.json")
+        
+        if not gainers_losers.empty:
+            gl_path = run_dir / "market_gainers_losers.csv"
+            gainers_losers.to_csv(gl_path, index=False)
+            artifacts.append("market_gainers_losers.csv")
+        
+        # Update settings with market artifacts
+        settings["market_artifacts"] = {
+            "market_group_decomposition.csv": "Group-level market substitution results",
+            "market_revenue_bridge.json": "Market revenue accounting bridge",
+            "market_gainers_losers.csv": "Net gainers and losers (quantity delta >= 1)",
+        }
+        (run_dir / "model_settings.json").write_text(json.dumps(settings, indent=2))
+        
+        # Write manifest
+        manifest = {
+            "run_id": run_id,
+            "data_hash": settings["data_hash"],
+            "raw_input_digest": settings["raw_input_digest"],
+            "model_version": MARKET_VERSION,
+            "inference_method": settings["inference_method"],
+            "environment": settings["environment"],
+            "artifacts": sorted(artifacts),
+        }
+        (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
+        
+        print(f"Market mode outputs saved to {run_dir}/")
+        
+    except Exception as e:
+        if run_dir.exists():
+            shutil.rmtree(run_dir)
+        raise
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Retail price simulation")
-    parser.add_argument("--scenario", choices=["nexus_cola_20pct", "custom"], default="nexus_cola_20pct",
-                        help="Scenario to run. 'custom' with no --changes means hold (no price changes).")
+    parser.add_argument("--scenario", choices=["hold", "nexus_cola_20pct", "custom"], default="nexus_cola_20pct",
+                        help="Scenario to run. 'hold' = no price changes, 'custom' with no --changes = hold.")
     parser.add_argument("--changes", type=Path, help="Load price changes from exported JSON/CSV file")
-    parser.add_argument("--sample", action="store_true", help="Run MCMC posterior analysis")
+    parser.add_argument("--sample", action="store_true", help="Run MCMC posterior analysis (independent mode only)")
     parser.add_argument("--prior-elasticity", type=float, default=-1.5)
     parser.add_argument("--max-evals", type=int, default=6000)
+    
+    # Mode selection
+    parser.add_argument("--mode", choices=["independent", "market"], default="independent",
+                        help="Simulation mode: 'independent' (own-price only) or 'market' (substitution with outside option).")
+    
+    # Market mode arguments
+    parser.add_argument("--market-profile", choices=["low", "central", "high"], default="central",
+                        help="Named sensitivity profile for market mode (default: central).")
+    parser.add_argument("--market-k", type=float, default=2.0,
+                        help="Price sensitivity parameter k for market mode (default: 2.0). Overridden by --market-profile.")
+    parser.add_argument("--market-outside-share", type=float, default=0.15,
+                        help="Outside share assumption a for market mode (default: 0.15). Overridden by --market-profile.")
     
     # Evaluation mode arguments
     parser.add_argument("--eval", action="store_true", help="Run out-of-time evaluation with rolling training prefixes")
@@ -258,128 +390,136 @@ def main() -> None:
         _run_evaluation_mode(args, data, config)
         return
     
-    # Create run directory for this execution
-    run_dir = _create_run_dir()
-    run_id = run_dir.name
+    # MAP fit (required for both modes - for elasticity estimates artifact and validation)
+    fitted = fit_model_map(data, config)
+    if not fitted["converged"]:
+        raise RuntimeError(f"MAP optimization failed: {fitted['message']}")
     
-    # Compute raw input digest for reproducibility
-    raw_input = DATA_PATH.read_bytes()
-    raw_input_digest = hashlib.sha256(raw_input).hexdigest()[:16]
-    
-    try:
-        # MAP fit
-        fitted = fit_model_map(data, config)
-        if not fitted["converged"]:
-            raise RuntimeError(f"MAP optimization failed: {fitted['message']}")
+    # Route to appropriate mode
+    if args.mode == "market":
+        _run_market_mode(args, data, baseline, fitted, config)
+    else:
+        # Independent mode (existing logic)
+        # Create run directory for this execution
+        run_dir = _create_run_dir()
+        run_id = run_dir.name
         
-        # Determine price changes
-        if args.changes:
-            price_changes = _load_changes_file(args.changes, baseline)
-            scenario_name = "replay"
-        elif args.scenario != "custom":
-            price_changes = build_named_scenario(args.scenario, baseline)
-            scenario_name = args.scenario
-        else:
-            price_changes = {}
-            scenario_name = "custom"
-        scenario = simulate_scenario(baseline, fitted["estimates"], price_changes)
-        decomp = three_factor_decomposition(scenario, [])
+        # Compute raw input digest for reproducibility
+        raw_input = DATA_PATH.read_bytes()
+        raw_input_digest = hashlib.sha256(raw_input).hexdigest()[:16]
         
-        # Settings for MAP run
-        generated_at = datetime.now(timezone.utc).isoformat()
-        settings = {
-            "model_version": MODEL_VERSION,
-            "data_hash": get_data_hash(data),
-            "raw_input_digest": raw_input_digest,
-            "config": vars(config),
-            "inference_method": "MAP",
-            "baseline_period": latest,
-            "converged": fitted["converged"],
-            "iterations": fitted["iterations"],
-            "scenario": scenario_name,
-            "price_changes": [{"cell": list(k), "price": v} for k, v in price_changes.items()],
-            "generated_at": generated_at,
-            "environment": _get_environment_info(),
-        }
-        if args.changes:
-            settings["changes_file"] = str(args.changes)
-        
-        # Write MAP artifacts
-        artifacts = _write_artifacts(run_dir, scenario, fitted["estimates"], decomp, settings)
-        
-        # Posterior run if requested
-        if args.sample:
-            try:
-                trace, products, pairs, categories, retailers, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, diagnostics = fit_model_mcmc(data, config)
-            except RuntimeError as e:
-                # Diagnostics failed - clean up run directory and exit with non-zero status
-                print(f"ERROR: MCMC diagnostics failed - {e}", file=sys.stderr)
-                print("Posterior intervals withheld. Previous run (if any) is unaffected.", file=sys.stderr)
-                # Clean up the run directory we created for this failed run
-                if run_dir.exists():
-                    shutil.rmtree(run_dir)
-                sys.exit(1)
+        try:
+            # Determine price changes
+            if args.changes:
+                price_changes = _load_changes_file(args.changes, baseline)
+                scenario_name = "replay"
+            elif args.scenario == "hold":
+                price_changes = {}
+                scenario_name = "hold"
+            elif args.scenario != "custom":
+                price_changes = build_named_scenario(args.scenario, baseline)
+                scenario_name = args.scenario
+            else:
+                price_changes = {}
+                scenario_name = "custom"
+            scenario = simulate_scenario(baseline, fitted["estimates"], price_changes)
+            decomp = three_factor_decomposition(scenario, [])
             
-            # Save diagnostics
-            diag_path = run_dir / "mcmc_diagnostics.json"
-            diag_data = {
-                "divergences": diagnostics.divergences,
-                "max_rhat": diagnostics.max_rhat,
-                "mean_rhat": diagnostics.mean_rhat,
-                "min_bulk_ess": diagnostics.min_bulk_ess,
-                "min_tail_ess": diagnostics.min_tail_ess,
-                "max_rhat_params": diagnostics.max_rhat_params,
-                "min_ess_params": diagnostics.min_ess_params,
-                "passed_gates": diagnostics.passed_gates,
-                "gate_criteria": diagnostics.gate_criteria,
+            # Settings for MAP run
+            generated_at = datetime.now(timezone.utc).isoformat()
+            settings = {
+                "model_version": MODEL_VERSION,
+                "data_hash": get_data_hash(data),
+                "raw_input_digest": raw_input_digest,
+                "config": vars(config),
+                "inference_method": "MAP",
+                "baseline_period": latest,
+                "converged": fitted["converged"],
+                "iterations": fitted["iterations"],
+                "scenario": scenario_name,
+                "price_changes": [{"cell": list(k), "price": v} for k, v in price_changes.items()],
+                "generated_at": generated_at,
+                "environment": _get_environment_info(),
             }
-            diag_path.write_text(json.dumps(diag_data, indent=2))
+            if args.changes:
+                settings["changes_file"] = str(args.changes)
             
-            rng = np.random.default_rng(RANDOM_SEED)
-            post, market = simulate_scenario_posterior(trace, baseline, products, pairs, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, price_changes, n_draws=500, rng=rng)
-            delta = market - baseline["Sales_Revenue"].sum()
-            posterior_summary = pd.DataFrame([{
-                "mean_revenue": market.mean(),
-                "std_revenue": market.std(ddof=1),
-                "q025_revenue": np.quantile(market, .025),
-                "q975_revenue": np.quantile(market, .975),
-                "mean_delta": delta.mean(),
-                "probability_positive_delta": float((delta > 0).mean())
-            }])
+            # Write MAP artifacts
+            artifacts = _write_artifacts(run_dir, scenario, fitted["estimates"], decomp, settings)
             
-            # Add diagnostics to posterior summary
-            posterior_summary["mcmc_divergences"] = diagnostics.divergences
-            posterior_summary["mcmc_max_rhat"] = diagnostics.max_rhat
-            posterior_summary["mcmc_min_bulk_ess"] = diagnostics.min_bulk_ess
-            posterior_summary["mcmc_min_tail_ess"] = diagnostics.min_tail_ess
-            posterior_summary["mcmc_passed_gates"] = diagnostics.passed_gates
+            # Posterior run if requested
+            if args.sample:
+                try:
+                    trace, products, pairs, categories, retailers, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, diagnostics = fit_model_mcmc(data, config)
+                except RuntimeError as e:
+                    # Diagnostics failed - clean up run directory and exit with non-zero status
+                    print(f"ERROR: MCMC diagnostics failed - {e}", file=sys.stderr)
+                    print("Posterior intervals withheld. Previous run (if any) is unaffected.", file=sys.stderr)
+                    # Clean up the run directory we created for this failed run
+                    if run_dir.exists():
+                        shutil.rmtree(run_dir)
+                    sys.exit(1)
+                
+                # Save diagnostics
+                diag_path = run_dir / "mcmc_diagnostics.json"
+                diag_data = {
+                    "divergences": diagnostics.divergences,
+                    "max_rhat": diagnostics.max_rhat,
+                    "mean_rhat": diagnostics.mean_rhat,
+                    "min_bulk_ess": diagnostics.min_bulk_ess,
+                    "min_tail_ess": diagnostics.min_tail_ess,
+                    "max_rhat_params": diagnostics.max_rhat_params,
+                    "min_ess_params": diagnostics.min_ess_params,
+                    "passed_gates": diagnostics.passed_gates,
+                    "gate_criteria": diagnostics.gate_criteria,
+                }
+                diag_path.write_text(json.dumps(diag_data, indent=2))
+                
+                rng = np.random.default_rng(RANDOM_SEED)
+                post, market = simulate_scenario_posterior(trace, baseline, products, pairs, sku_idx, pair_idx, cat_idx, ret_idx, prod_cat_idx, price_changes, n_draws=500, rng=rng)
+                delta = market - baseline["Sales_Revenue"].sum()
+                posterior_summary = pd.DataFrame([{
+                    "mean_revenue": market.mean(),
+                    "std_revenue": market.std(ddof=1),
+                    "q025_revenue": np.quantile(market, .025),
+                    "q975_revenue": np.quantile(market, .975),
+                    "mean_delta": delta.mean(),
+                    "probability_positive_delta": float((delta > 0).mean())
+                }])
+                
+                # Add diagnostics to posterior summary
+                posterior_summary["mcmc_divergences"] = diagnostics.divergences
+                posterior_summary["mcmc_max_rhat"] = diagnostics.max_rhat
+                posterior_summary["mcmc_min_bulk_ess"] = diagnostics.min_bulk_ess
+                posterior_summary["mcmc_min_tail_ess"] = diagnostics.min_tail_ess
+                posterior_summary["mcmc_passed_gates"] = diagnostics.passed_gates
+                
+                # Update settings for posterior
+                settings["inference_method"] = "posterior"
+                settings["mcmc_diagnostics"] = diag_data
+                # Re-write artifacts with posterior summary
+                artifacts = _write_artifacts(run_dir, scenario, fitted["estimates"], decomp, settings, 
+                                             is_posterior=True, posterior_summary=posterior_summary)
             
-            # Update settings for posterior
-            settings["inference_method"] = "posterior"
-            settings["mcmc_diagnostics"] = diag_data
-            # Re-write artifacts with posterior summary
-            artifacts = _write_artifacts(run_dir, scenario, fitted["estimates"], decomp, settings, 
-                                         is_posterior=True, posterior_summary=posterior_summary)
-        
-        # Write manifest with only successfully produced artifacts
-        manifest = {
-            "run_id": run_id,
-            "data_hash": settings["data_hash"],
-            "raw_input_digest": settings["raw_input_digest"],
-            "model_version": MODEL_VERSION,
-            "inference_method": settings["inference_method"],
-            "environment": settings["environment"],
-            "artifacts": sorted(artifacts),
-        }
-        (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
-        
-        print(f"Outputs saved to {run_dir}/")
-        
-    except Exception as e:
-        # Clean up on failure - remove the run directory
-        if run_dir.exists():
-            shutil.rmtree(run_dir)
-        raise
+            # Write manifest with only successfully produced artifacts
+            manifest = {
+                "run_id": run_id,
+                "data_hash": settings["data_hash"],
+                "raw_input_digest": settings["raw_input_digest"],
+                "model_version": MODEL_VERSION,
+                "inference_method": settings["inference_method"],
+                "environment": settings["environment"],
+                "artifacts": sorted(artifacts),
+            }
+            (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
+            
+            print(f"Outputs saved to {run_dir}/")
+            
+        except Exception as e:
+            # Clean up on failure - remove the run directory
+            if run_dir.exists():
+                shutil.rmtree(run_dir)
+            raise
 
 
 if __name__ == "__main__":

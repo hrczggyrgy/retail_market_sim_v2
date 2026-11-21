@@ -12,10 +12,12 @@ from .dashboard_adapter import matrix_to_price_changes, price_support
 from .decomposition import three_factor_decomposition, three_factor_decomposition_report, value_shares
 from .model import ModelConfig, fit_model_map
 from .simulation import build_named_scenario, simulate_scenario
+from .market import MarketConfig, simulate_market_scenario, aggregate_to_groups, get_gainers_losers, market_revenue_bridge
 from .dashboard_cache import get_cached_scenario_bundle, _hash_config
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "sample_data.csv"
 MODEL_VERSION = "retail-map-v2"
+MARKET_VERSION = "retail-market-v1"
 
 
 def _generate_plain_language_explanation(
@@ -680,6 +682,549 @@ def render_market_share_explanation(
     )
 
 
+# =============================================================================
+# Market Mode Renderers
+# =============================================================================
+
+def _generate_market_plain_language_explanation(
+    target_row: pd.Series,
+    r0: float,
+    r1: float,
+    q0: float,
+    q1: float,
+    baseline_price: float,
+    simulated_price: float,
+    support_status: str,
+    hist_min: float,
+    hist_max: float,
+    zero_anchor: bool,
+    market_config: MarketConfig,
+    bridge: dict,
+) -> str:
+    """Generate a plain-language explanation for market mode."""
+    price_pct = 100 * (simulated_price / baseline_price - 1)
+    pack_change_pct = 100 * (target_row["Simulated_Unit_Sales"] / target_row["Baseline_Unit_Sales"] - 1)
+    target_rev_change_pct = 100 * (target_row["Simulated_Revenue"] / target_row["Baseline_Revenue"] - 1)
+    market_rev_change_pct = 100 * (r1 / r0 - 1)
+    
+    sku_name = target_row["SKU"]
+    brand_name = target_row["Brand"]
+    retailer_name = target_row["Retailer"]
+    cat_name = target_row["Category"]
+    
+    explanation_parts = []
+    
+    # What was changed
+    explanation_parts.append(
+        f"A {price_pct:+.1f}% price change for **{sku_name} ({brand_name})** at **{retailer_name}** "
+        f"(baseline: {baseline_price:.2f} → new: {simulated_price:.2f})."
+    )
+    
+    # Target effect - note the substitution context
+    if not zero_anchor:
+        explanation_parts.append(
+            f"In the **{cat_name} × {retailer_name}** group, this SKU's packs change by "
+            f"**{pack_change_pct:+.1f}%** "
+            f"({target_row['Baseline_Unit_Sales']:,.0f} → {target_row['Simulated_Unit_Sales']:,.0f}). "
+            f"Target SKU revenue changes by **{target_rev_change_pct:+.1f}%**."
+        )
+    else:
+        explanation_parts.append(
+            f"This SKU-retailer cell has **no historical sales (zero anchor)**, so no quantity response is estimated."
+        )
+    
+    # Substitution effects on peers
+    bridge = market_revenue_bridge(pd.DataFrame([target_row])) if False else bridge  # placeholder
+    # Get substitution effect from bridge
+    sub_vol = bridge.get("Substitution_Volume_Effect", 0)
+    sub_pct = 100 * sub_vol / r0 if r0 > 0 else 0
+    
+    if sub_vol != 0:
+        direction = "gain" if sub_vol > 0 else "lose"
+        explanation_parts.append(
+            f"🔄 **Substitution effects:** Other eligible SKUs in the same "
+            f"category×retailer group **{direction}** packs due to the price change. "
+            f"Net substitution volume effect: {sub_vol:+,.1f} packs ({sub_pct:+.2f}% of market revenue)."
+        )
+    
+    # Market effect
+    outside_change = r1 - r0 - target_row["Revenue_Delta"] - sub_vol
+    explanation_parts.append(
+        f"**Observed-market revenue** (all SKUs × retailers in this dataset) changes by "
+        f"**{market_rev_change_pct:+.2f}%**. This combines the target SKU effect, "
+        f"substitution spillovers to peer SKUs, and category expansion/contraction "
+        f"through the outside option (modeled purchase opportunities)."
+    )
+    
+    # Model assumptions
+    explanation_parts.append(
+        f"⚙️ **Model assumptions:** Price sensitivity k = {market_config.k:.1f}; "
+        f"outside share = {market_config.outside_share:.0%}. "
+        f"These are illustrative assumptions, not estimated from data. "
+        f"Cross-retailer and cross-category switching are not modeled."
+    )
+    
+    # Support status
+    if zero_anchor:
+        explanation_parts.append(
+            "⚠️ **Zero anchor warning:** This cell has no positive-sales history. "
+            f"The model assumes zero elasticity; substitution effects on peers still apply."
+        )
+    elif support_status == "out_of_range":
+        explanation_parts.append(
+            f"⚠️ **Extrapolation warning:** The proposed price ({simulated_price:.2f}) lies outside the "
+            f"observed historical range ({hist_min:.2f}–{hist_max:.2f}). "
+            f"Results are model extrapolations without data support."
+        )
+    elif support_status == "unknown":
+        explanation_parts.append(
+            "ℹ️ **No historical data:** This cell has no observed positive-sales history. "
+            "Price response cannot be validated."
+        )
+    else:
+        explanation_parts.append(
+            f"✅ **Supported:** The proposed price lies within the observed historical range "
+            f"({hist_min:.2f}–{hist_max:.2f})."
+        )
+    
+    return "\n\n".join(explanation_parts)
+
+
+def render_market_decision_summary(
+    scenario: pd.DataFrame,
+    support: pd.DataFrame,
+    changes: dict,
+    target_key: tuple,
+    target_row: pd.Series,
+    target_support: pd.Series,
+    baseline_price: float,
+    simulated_price: float,
+    r0: float,
+    r1: float,
+    q0: float,
+    q1: float,
+    market_config: MarketConfig,
+) -> None:
+    """Render the decision summary for market mode."""
+    st.markdown("---")
+    st.subheader("📋 Decision Summary (Market Mode)")
+    
+    # Scenario metadata
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"**Target:** {target_key[3]} ({target_key[2]}) at {target_key[1]}")
+        st.markdown(f"**Category:** {target_key[0]}")
+    with col2:
+        price_pct = 100 * (simulated_price / baseline_price - 1)
+        st.markdown(f"**Price change:** {price_pct:+.1f}% ({baseline_price:.2f} → {simulated_price:.2f})")
+        st.markdown(f"**Group:** {target_key[0]} × {target_key[1]}")
+    with col3:
+        support_label = {
+            "in_range": "🟢 Within historical range",
+            "out_of_range": "🔴 Outside historical range",
+            "unknown": "❓ No historical data",
+        }.get(target_support["Support_Status"], target_support["Support_Status"])
+        if bool(target_support["Zero_Anchor"]):
+            support_label = "⚪ Zero anchor (not estimable)"
+        st.markdown(f"**Data support:** {support_label}")
+        st.markdown(f"**Baseline period:** {int(scenario['Period'].max())}")
+    
+    # Market assumptions box
+    st.info(
+        f"⚙️ **Market model assumptions:** Price sensitivity **k = {market_config.k:.1f}**; "
+        f"Outside share **a = {market_config.outside_share:.0%}**. "
+        f"These are illustrative, not estimated from data. "
+        f"Substitution occurs within **{target_key[0]} × {target_key[1]}** only. "
+        f"Cross-retailer and cross-category switching not modeled."
+    )
+    
+    # Main answer - three large cards
+    st.markdown("### What happens?")
+    a, b, c = st.columns(3)
+    
+    target_rev_change = float(target_row["Revenue_Delta"])
+    target_rev_change_pct = 100 * (target_row["Simulated_Revenue"] / target_row["Baseline_Revenue"] - 1)
+    pack_change_pct = 100 * (target_row["Simulated_Unit_Sales"] / target_row["Baseline_Unit_Sales"] - 1)
+    market_rev_change = r1 - r0
+    market_rev_change_pct = 100 * (r1 / r0 - 1)
+    
+    with a:
+        st.metric(
+            "Target SKU Revenue",
+            f"{target_row['Simulated_Revenue']:,.2f}",
+            f"{target_rev_change:+,.2f} ({target_rev_change_pct:+.1f}%)",
+            delta_color="normal" if target_rev_change >= 0 else "inverse"
+        )
+        st.caption(f"Packs: {target_row['Baseline_Unit_Sales']:,.0f} → {target_row['Simulated_Unit_Sales']:,.0f} ({pack_change_pct:+.1f}%)")
+    
+    with b:
+        st.metric(
+            "Observed-Market Revenue",
+            f"{r1:,.2f}",
+            f"{market_rev_change:+,.2f} ({market_rev_change_pct:+.2f}%)",
+            delta_color="normal" if market_rev_change >= 0 else "inverse"
+        )
+        st.caption(f"Market packs: {q0:,.1f} → {q1:,.1f}")
+    
+    with c:
+        # Group-level effect
+        bridge = market_revenue_bridge(scenario)
+        sub_vol = bridge.get("Substitution_Volume_Effect", 0)
+        st.metric(
+            "Substitution Volume Effect",
+            f"{sub_vol:+,.1f} packs",
+            f"{100 * sub_vol / r0:+.2f}% of market revenue" if r0 > 0 else "N/A"
+        )
+        st.caption(f"Net peer SKU volume change in {target_key[0]} × {target_key[1]}")
+    
+    # Plain-language explanation
+    st.markdown("### Why?")
+    bridge = market_revenue_bridge(scenario)
+    explanation = _generate_market_plain_language_explanation(
+        target_row, r0, r1, q0, q1,
+        baseline_price, simulated_price,
+        target_support["Support_Status"],
+        target_support["Historical_Min_Price"],
+        target_support["Historical_Max_Price"],
+        bool(target_support["Zero_Anchor"]),
+        market_config,
+        bridge,
+    )
+    st.markdown(explanation)
+    
+    st.markdown("---")
+
+
+def render_market_substitution_explanation(
+    scenario: pd.DataFrame,
+    changes: dict,
+    r0: float,
+    r1: float,
+    market_config: MarketConfig,
+) -> None:
+    """Render an interactive market waterfall with substitution effects."""
+    st.subheader("🔍 Why did market revenue change? (Market Mode)")
+    st.caption("This bridge includes substitution effects. Hover for definitions.")
+    
+    bridge = market_revenue_bridge(scenario)
+    
+    # Build waterfall data
+    waterfall_data = {
+        "Baseline Market Revenue": r0,
+        "Edited Price Effect": bridge["Edited_Price_Effect"],
+        "Edited Volume Effect": bridge["Edited_Volume_Effect"],
+        "Substitution Volume Effect": bridge["Substitution_Volume_Effect"],
+        "Substitution Price Effect": bridge["Substitution_Price_Effect"],
+        "Outside Option Effect": bridge["Total_Change"] - bridge["Edited_Price_Effect"] - bridge["Edited_Volume_Effect"] - bridge["Substitution_Volume_Effect"] - bridge["Substitution_Price_Effect"],
+        "Scenario Market Revenue": r1,
+    }
+    
+    # Interactive waterfall chart
+    fig = go.Figure(go.Waterfall(
+        name="Market Revenue Bridge (Market Mode)",
+        orientation="v",
+        measure=["absolute", "relative", "relative", "relative", "relative", "relative", "total"],
+        x=list(waterfall_data.keys()),
+        y=list(waterfall_data.values()),
+        text=[f"{v:+,.2f}" for v in waterfall_data.values()],
+        textposition="outside",
+        connector={"line": {"color": "rgb(63, 63, 63)"}},
+        increasing={"marker": {"color": "#2ca02c"}},
+        decreasing={"marker": {"color": "#d62728"}},
+        totals={"marker": {"color": "#1f77b4"}},
+        hovertemplate="<b>%{x}</b><br>Value: %{y:,.2f}<extra></extra>",
+    ))
+    
+    fig.update_layout(
+        title="Observed-Market Revenue: Baseline → Scenario (Market Mode, dataset currency)",
+        yaxis_title="Revenue (dataset currency)",
+        height=400,
+        showlegend=False,
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Explanatory text
+    st.markdown("**How to read this:**")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        - **Baseline Market Revenue**: {r0:,.2f}
+        - **Edited Price Effect**: {bridge['Edited_Price_Effect']:+,.2f} (price change × scenario qty)
+        - **Edited Volume Effect**: {bridge['Edited_Volume_Effect']:+,.2f} (qty change × baseline price)
+        - **Substitution Volume Effect**: {bridge['Substitution_Volume_Effect']:+,.2f} (peer SKU qty changes)
+        """)
+    with col2:
+        st.markdown(f"""
+        - **Substitution Price Effect**: {bridge['Substitution_Price_Effect']:+,.2f} (peer SKU price effects)
+        - **Outside Option Effect**: {waterfall_data['Outside Option Effect']:+,.2f} (category expansion/contraction)
+        - **Scenario Market Revenue**: {r1:,.2f} (new total)
+        - **Net Market Change**: {r1 - r0:+,.2f} ({(r1/r0-1)*100:+.2f}%)
+        """)
+    
+    # Key insight
+    st.info(
+        f"💡 **Key insight:** The target SKU's revenue changed by {bridge['Edited_Price_Effect'] + bridge['Edited_Volume_Effect']:+,.2f}. "
+        f"Peer SKUs in the same category×retailer group changed by {bridge['Substitution_Volume_Effect']:+,.2f} packs "
+        f"due to substitution. The outside option (modeled purchase opportunities) changed by "
+        f"{waterfall_data['Outside Option Effect']:+,.2f}. "
+        f"Total observed-market revenue changed by {r1-r0:+,.2f} ({(r1/r0-1)*100:+.2f}%). "
+        f"Unedited cells outside the affected group are unchanged."
+    )
+
+
+def render_market_target_cell_story(
+    target_row: pd.Series,
+    target_support: pd.Series,
+    baseline_price: float,
+    simulated_price: float,
+    market_config: MarketConfig,
+) -> None:
+    """Render enhanced target-cell story for market mode."""
+    st.subheader(f"🎯 Target Cell Story: {target_row['SKU']} ({target_row['Brand']}) at {target_row['Retailer']}")
+    
+    support_status = target_support["Support_Status"]
+    hist_min = target_support["Historical_Min_Price"]
+    hist_max = target_support["Historical_Max_Price"]
+    zero_anchor = bool(target_support["Zero_Anchor"])
+    
+    price_pct = 100 * (simulated_price / baseline_price - 1)
+    pack_change_pct = 100 * (target_row["Simulated_Unit_Sales"] / target_row["Baseline_Unit_Sales"] - 1)
+    target_rev_change_pct = 100 * (target_row["Simulated_Revenue"] / target_row["Baseline_Revenue"] - 1)
+    
+    # One-sentence interpretation
+    if zero_anchor:
+        interpretation = (
+            "⚠️ This SKU-retailer has **no historical sales**, so the model assumes zero elasticity. "
+            "Substitution effects on peer SKUs still apply based on their baseline shares."
+        )
+    elif support_status == "out_of_range":
+        interpretation = (
+            f"🔴 **Extrapolation:** The proposed price ({simulated_price:.2f}) is outside the observed "
+            f"historical range ({hist_min:.2f}–{hist_max:.2f}). "
+            f"The market model uses assumption-based parameters (k={market_config.k:.1f}, a={market_config.outside_share:.0%}). "
+            f"Results have **no data support** at this price level."
+        )
+    elif support_status == "unknown":
+        interpretation = (
+            "❓ This cell has **no historical positive-sales data**. The model cannot validate the price response."
+        )
+    else:
+        sensitivity = "highly" if market_config.k > 2.5 else "moderately" if market_config.k > 1.5 else "low"
+        direction = "increase" if pack_change_pct > 0 else "decrease"
+        interpretation = (
+            f"✅ In the market model with **k={market_config.k:.1f}**, this SKU's quantity "
+            f"{direction}s by {abs(pack_change_pct):.1f}%. "
+            f"Peer SKUs in the same category×retailer group experience offsetting substitution effects. "
+            f"The category×retailer group captures {market_config.outside_share:.0%} of outside opportunities."
+        )
+    
+    st.markdown(f"### {interpretation}")
+    
+    # Detailed charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Price per pack**")
+        price_fig = go.Figure()
+        price_fig.add_trace(go.Scatter(
+            x=["Baseline", "Scenario"],
+            y=[baseline_price, simulated_price],
+            mode="lines+markers+text",
+            text=[f"{baseline_price:.2f}", f"{simulated_price:.2f}"],
+            textposition="top center",
+            line=dict(color="#1f77b4", width=3),
+            marker=dict(size=14, color="#1f77b4", symbol="circle"),
+            name="Price",
+            showlegend=False,
+        ))
+        if not zero_anchor and not np.isnan(hist_min) and not np.isnan(hist_max):
+            price_fig.add_hrect(
+                y0=hist_min, y1=hist_max,
+                fillcolor="rgba(44, 160, 44, 0.15)",
+                line_width=0,
+                annotation_text="Historical range",
+                annotation_position="top left",
+            )
+        price_fig.update_layout(
+            yaxis_title="Price",
+            height=280,
+            margin=dict(l=40, r=20, t=30, b=40),
+            xaxis=dict(showgrid=False),
+        )
+        st.plotly_chart(price_fig, use_container_width=True)
+    
+    with col2:
+        st.markdown("**Packs (quantity)**")
+        qty_fig = go.Figure()
+        qty_fig.add_trace(go.Scatter(
+            x=["Baseline", "Scenario"],
+            y=[target_row["Baseline_Unit_Sales"], target_row["Simulated_Unit_Sales"]],
+            mode="lines+markers+text",
+            text=[f"{target_row['Baseline_Unit_Sales']:,.0f}", f"{target_row['Simulated_Unit_Sales']:,.0f}"],
+            textposition="top center",
+            line=dict(color="#2ca02c", width=3),
+            marker=dict(size=14, color="#2ca02c", symbol="square"),
+            name="Quantity",
+            showlegend=False,
+        ))
+        qty_fig.update_layout(
+            yaxis_title="Packs",
+            height=280,
+            margin=dict(l=40, r=20, t=30, b=40),
+            xaxis=dict(showgrid=False),
+        )
+        st.plotly_chart(qty_fig, use_container_width=True)
+    
+    # Revenue and model details
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        st.markdown("**Revenue**")
+        rev_fig = go.Figure()
+        baseline_rev = baseline_price * target_row["Baseline_Unit_Sales"]
+        scenario_rev = simulated_price * target_row["Simulated_Unit_Sales"]
+        rev_fig.add_trace(go.Scatter(
+            x=["Baseline", "Scenario"],
+            y=[baseline_rev, scenario_rev],
+            mode="lines+markers+text",
+            text=[f"{baseline_rev:,.2f}", f"{scenario_rev:,.2f}"],
+            textposition="top center",
+            line=dict(color="#ff7f0e", width=3),
+            marker=dict(size=14, color="#ff7f0e", symbol="diamond"),
+            name="Revenue",
+            showlegend=False,
+        ))
+        rev_fig.update_layout(
+            yaxis_title="Revenue",
+            height=280,
+            margin=dict(l=40, r=20, t=30, b=40),
+            xaxis=dict(showgrid=False),
+        )
+        st.plotly_chart(rev_fig, use_container_width=True)
+    
+    with col4:
+        st.markdown("**Market Model Details**")
+        st.metric("Price sensitivity (k)", f"{market_config.k:.2f}")
+        st.metric("Outside share (a)", f"{market_config.outside_share:.0%}")
+        
+        if zero_anchor:
+            st.warning("⚪ **Zero anchor** — no historical sales, zero elasticity assumed")
+        else:
+            if support_status == "in_range":
+                st.success("🟢 **Within historical range**")
+            elif support_status == "out_of_range":
+                st.error("🔴 **Outside historical range** — extrapolation")
+            else:
+                st.info("❓ **No historical data**")
+            
+            if not np.isnan(hist_min) and not np.isnan(hist_max):
+                st.caption(f"Historical price range: {hist_min:.2f} – {hist_max:.2f}")
+                st.caption(f"Proposed price: {simulated_price:.2f}")
+                if simulated_price < hist_min:
+                    st.caption(f"📍 {hist_min - simulated_price:.2f} below historical minimum")
+                elif simulated_price > hist_max:
+                    st.caption(f"📍 {simulated_price - hist_max:.2f} above historical maximum")
+                else:
+                    st.caption("📍 Within historical range")
+        
+        st.caption(f"Price change: {price_pct:+.1f}%")
+        st.caption(f"Pack change: {pack_change_pct:+.1f}%")
+        st.caption(f"Revenue delta: {target_row['Revenue_Delta']:+,.2f} ({target_rev_change_pct:+.1f}%)")
+        
+        # Model limitations note
+        with st.expander("⚠️ What this model does not know"):
+            st.markdown("""
+            - **Assumption-based parameters:** k and outside share are illustrative, not estimated from data.
+            - **No cross-retailer switching:** Consumers cannot switch to other retailers in this model.
+            - **No cross-category switching:** Consumers cannot switch to other categories in this model.
+            - **Proportional diversion:** Substitution is proportional to baseline shares, not learned preferences.
+            - **Fixed assortment:** No stock-outs, delisting, or new listings between baseline and scenario.
+            - **Same-period anchoring:** Uses observed baseline demand, not a future forecast.
+            - **No causal guarantee:** This is a scenario calculation, not observed commercial uplift.
+            """)
+
+
+def render_market_gainers_losers(
+    scenario: pd.DataFrame,
+    target_key: tuple,
+) -> None:
+    """Render net gainers and losers in market mode."""
+    st.subheader("📊 Net gainers and losers (Market Mode)")
+    st.caption("Shows SKUs with meaningful quantity changes. Unedited SKUs change due to substitution.")
+    
+    gainers_losers = get_gainers_losers(scenario, min_delta=1.0)
+    
+    if len(gainers_losers) == 0:
+        st.info("No SKUs with quantity changes ≥ 1 pack.")
+        return
+    
+    # Separate edited vs unedited
+    edited = gainers_losers[gainers_losers["Price_Edited"]]
+    unedited = gainers_losers[~gainers_losers["Price_Edited"]]
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if len(edited) > 0:
+            st.markdown("**Directly edited SKUs**")
+            display_edited = edited[["Category", "Retailer", "Brand", "SKU", "Baseline_Unit_Sales", 
+                                     "Simulated_Unit_Sales", "Quantity_Delta", "Price_Change_Pct"]].copy()
+            display_edited.columns = ["Category", "Retailer", "Brand", "SKU", "Baseline Packs", 
+                                      "Scenario Packs", "Change (packs)", "Price Δ%"]
+            st.dataframe(
+                display_edited.style.format({
+                    "Baseline Packs": "{:,.0f}",
+                    "Scenario Packs": "{:,.1f}",
+                    "Change (packs)": "{:+,.1f}",
+                    "Price Δ%": "{:+.1f}%",
+                }).applymap(
+                    lambda x: "color: green" if isinstance(x, str) and x.startswith("+") else ("color: red" if isinstance(x, str) and x.startswith("-") else ""),
+                    subset=["Change (packs)"],
+                ),
+                hide_index=True,
+                use_container_width=True,
+            )
+    
+    with col2:
+        if len(unedited) > 0:
+            st.markdown("**Substitution spillovers (unedited SKUs)**")
+            display_unedited = unedited[["Category", "Retailer", "Brand", "SKU", "Baseline_Unit_Sales", 
+                                         "Simulated_Unit_Sales", "Quantity_Delta"]].copy()
+            display_unedited.columns = ["Category", "Retailer", "Brand", "SKU", "Baseline Packs", 
+                                        "Scenario Packs", "Change (packs)"]
+            st.dataframe(
+                display_unedited.style.format({
+                    "Baseline Packs": "{:,.0f}",
+                    "Scenario Packs": "{:,.1f}",
+                    "Change (packs)": "{:+,.1f}",
+                }).applymap(
+                    lambda x: "color: green" if isinstance(x, str) and x.startswith("+") else ("color: red" if isinstance(x, str) and x.startswith("-") else ""),
+                    subset=["Change (packs)"],
+                ),
+                hide_index=True,
+                use_container_width=True,
+            )
+    
+    # Summary metrics
+    total_gain = gainers_losers[gainers_losers["Quantity_Delta"] > 0]["Quantity_Delta"].sum()
+    total_loss = gainers_losers[gainers_losers["Quantity_Delta"] < 0]["Quantity_Delta"].sum()
+    
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Total gainers", f"{total_gain:+,.1f} packs")
+    with c2:
+        st.metric("Total losers", f"{total_loss:+,.1f} packs")
+    with c3:
+        st.metric("Net group change", f"{total_gain + total_loss:+,.1f} packs")
+    
+    st.info(
+        "💡 **Note:** In the affected category×retailer group, the sum of all quantity changes "
+        "equals the change in captured opportunities. Outside the affected group, SKUs are unchanged. "
+        "The outside option absorbs residual category expansion/contraction."
+    )
+
+
 def render_price_sweep_decision_chart(
     sweep_df: pd.DataFrame,
     baseline_price: float,
@@ -925,6 +1470,54 @@ def main() -> None:
     
     baseline_period = int(baseline["Period"].max())
     
+    # Mode selector
+    st.subheader("Simulation mode")
+    mode = st.selectbox(
+        "Choose simulation mode",
+        options=["independent", "market"],
+        format_func=lambda m: {
+            "independent": "Independent own-price (MAP elasticities)",
+            "market": "Market substitution (assumption-based logit)",
+        }[m],
+        index=0,
+        help=(
+            "Independent: Each SKU responds only to its own price change using fitted elasticities. "
+            "Market: Substitution within category×retailer groups using a share-weighted logit model "
+            "with assumption-based parameters (k, outside share). Not a forecast or causal estimate."
+        ),
+    )
+    
+    # Market mode configuration
+    if mode == "market":
+        st.caption("Market mode assumptions (illustrative, not estimated from data):")
+        market_col1, market_col2 = st.columns(2)
+        with market_col1:
+            market_profile = st.selectbox(
+                "Sensitivity profile",
+                options=["low", "central", "high"],
+                format_func=lambda p: {
+                    "low": "Low (k=1.0, outside=5%)",
+                    "central": "Central (k=2.0, outside=15%)",
+                    "high": "High (k=3.5, outside=30%)",
+                }[p],
+                index=1,
+            )
+            if market_profile == "low":
+                market_k, market_outside = 1.0, 0.05
+            elif market_profile == "central":
+                market_k, market_outside = 2.0, 0.15
+            else:
+                market_k, market_outside = 3.5, 0.30
+        with market_col2:
+            # Allow override
+            custom_k = st.number_input("Price sensitivity k", 0.1, 10.0, market_k, 0.1, 
+                                       help="Price sensitivity parameter. Higher = more substitution.")
+            custom_outside = st.number_input("Outside share", 0.0, 0.9, market_outside, 0.01,
+                                             help="Baseline share of outside option. Higher = more category expansion/contraction.")
+        market_config = MarketConfig(k=custom_k, outside_share=custom_outside)
+    else:
+        market_config = None
+    
     # Preset selector for quick scenarios
     st.subheader("Quick scenario")
     preset_options = {
@@ -1032,27 +1625,55 @@ def main() -> None:
     config_hash = _hash_config(config)
     data_hash = signature
     
-    # Get cached scenario bundle (simulation + support + decompositions)
-    try:
-        with st.spinner("Computing scenario…"):
-            bundle = get_cached_scenario_bundle(
-                baseline=baseline,
-                fitted_estimates=fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"],
-                price_changes=changes,
-                data=data,
-                data_hash=data_hash,
-                config_hash=config_hash,
-            )
+    # ============================================================
+    # SCENARIO COMPUTATION (mode-dependent)
+    # ============================================================
+    if mode == "independent":
+        # Use existing cached bundle (MAP fit + simulation + decompositions)
+        try:
+            with st.spinner("Computing scenario…"):
+                bundle = get_cached_scenario_bundle(
+                    baseline=baseline,
+                    fitted_estimates=fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"],
+                    price_changes=changes,
+                    data=data,
+                    data_hash=data_hash,
+                    config_hash=config_hash,
+                )
+            
+            scenario = bundle.scenario
+            support = bundle.support
+            market_decomp = bundle.market_decomp
+            category_decomp = bundle.category_decomp
+            retailer_decomp = bundle.retailer_decomp
+            brand_decomp = bundle.brand_decomp
+        except Exception as e:
+            st.error(f"Scenario computation failed: {e}")
+            st.stop()
         
-        scenario = bundle.scenario
-        support = bundle.support
-        market_decomp = bundle.market_decomp
-        category_decomp = bundle.category_decomp
-        retailer_decomp = bundle.retailer_decomp
-        brand_decomp = bundle.brand_decomp
-    except Exception as e:
-        st.error(f"Scenario computation failed: {e}")
-        st.stop()
+        # Compute price support for independent mode (uses Elasticity_MAP)
+        # (already included in bundle)
+        
+    else:  # market mode
+        # Market mode uses assumption-based logit, no MAP fit needed for simulation
+        # But we still compute price support for UI warnings (using baseline prices as reference)
+        try:
+            with st.spinner("Computing market scenario…"):
+                scenario = simulate_market_scenario(baseline, changes, market_config)
+                
+                # Compute price support (for UI warnings about historical price range)
+                # Uses the same support logic but with market simulated prices
+                from .dashboard_adapter import price_support
+                support = price_support(data, scenario)
+                
+                # Compute decompositions
+                market_decomp = three_factor_decomposition(scenario, [])
+                category_decomp = three_factor_decomposition_report(scenario, ["Category"])
+                retailer_decomp = three_factor_decomposition_report(scenario, ["Retailer"])
+                brand_decomp = three_factor_decomposition_report(scenario, ["Category", "Brand"])
+        except Exception as e:
+            st.error(f"Market scenario computation failed: {e}")
+            st.stop()
     
     r0 = float(scenario["Baseline_Revenue"].sum())
     r1 = float(scenario["Simulated_Revenue"].sum())
@@ -1095,48 +1716,91 @@ def main() -> None:
         baseline_price = float(target_row["Baseline_Price"])
         simulated_price = float(target_row["Simulated_Price"])
         
-        render_decision_summary(
-            scenario=scenario,
-            support=support,
-            changes=changes,
-            baseline_price=baseline_price,
-            simulated_price=simulated_price,
-            r0=r0,
-            r1=r1,
-            q0=q0,
-            q1=q1,
-        )
-        
-        # ============================================================
-        # PHASE 2: MARKET EXPLANATION (Why did market revenue change?)
-        # ============================================================
-        render_market_explanation(
-            scenario=scenario,
-            market_decomp=market_decomp,
-            changes=changes,
-            r0=r0,
-            r1=r1,
-        )
-        
-        # ============================================================
-        # PHASE 3: TARGET CELL STORY (Enhanced cell detail)
-        # ============================================================
-        render_target_cell_story(
-            target_row=target_row,
-            target_support=target_support,
-            baseline_price=baseline_price,
-            simulated_price=simulated_price,
-            elasticity=float(target_row["Elasticity_MAP"]),
-        )
-        
-        # ============================================================
-        # PHASE 4: MARKET SHARE EXPLANATION (Who gained/lost share?)
-        # ============================================================
-        render_market_share_explanation(
-            scenario=scenario,
-            changes=changes,
-            target_key=target_key,
-        )
+        if mode == "independent":
+            # Independent mode: use existing renderers
+            render_decision_summary(
+                scenario=scenario,
+                support=support,
+                changes=changes,
+                baseline_price=baseline_price,
+                simulated_price=simulated_price,
+                r0=r0,
+                r1=r1,
+                q0=q0,
+                q1=q1,
+            )
+            
+            # ============================================================
+            # PHASE 2: MARKET EXPLANATION (Why did market revenue change?)
+            # ============================================================
+            render_market_explanation(
+                scenario=scenario,
+                market_decomp=market_decomp,
+                changes=changes,
+                r0=r0,
+                r1=r1,
+            )
+            
+            # ============================================================
+            # PHASE 3: TARGET CELL STORY (Enhanced cell detail)
+            # ============================================================
+            render_target_cell_story(
+                target_row=target_row,
+                target_support=target_support,
+                baseline_price=baseline_price,
+                simulated_price=simulated_price,
+                elasticity=float(target_row["Elasticity_MAP"]),
+            )
+            
+            # ============================================================
+            # PHASE 4: MARKET SHARE EXPLANATION (Who gained/lost share?)
+            # ============================================================
+            render_market_share_explanation(
+                scenario=scenario,
+                changes=changes,
+                target_key=target_key,
+            )
+        else:
+            # Market mode: use market-specific renderers
+            render_market_decision_summary(
+                scenario=scenario,
+                support=support,
+                changes=changes,
+                target_key=target_key,
+                target_row=target_row,
+                target_support=target_support,
+                baseline_price=baseline_price,
+                simulated_price=simulated_price,
+                r0=r0,
+                r1=r1,
+                q0=q0,
+                q1=q1,
+                market_config=market_config,
+            )
+            
+            # Market explanation with substitution effects
+            render_market_substitution_explanation(
+                scenario=scenario,
+                changes=changes,
+                r0=r0,
+                r1=r1,
+                market_config=market_config,
+            )
+            
+            # Target cell story for market mode
+            render_market_target_cell_story(
+                target_row=target_row,
+                target_support=target_support,
+                baseline_price=baseline_price,
+                simulated_price=simulated_price,
+                market_config=market_config,
+            )
+            
+            # Market gainers/losers
+            render_market_gainers_losers(
+                scenario=scenario,
+                target_key=target_key,
+            )
     else:
         # No changes - show simple KPIs
         a, b, c, d = st.columns(4)

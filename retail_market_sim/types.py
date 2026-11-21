@@ -58,6 +58,25 @@ class ScenarioResult:
 
 
 @dataclass(frozen=True)
+class MarketScenarioResult:
+    """Result from market substitution scenario simulation."""
+    data: pd.DataFrame  # Contains all baseline/simulated columns plus market metadata
+
+    def __post_init__(self) -> None:
+        required = {
+            "Category", "Retailer", "Brand", "SKU", "Pack_Size",
+            "Baseline_Unit_Sales", "Baseline_Price", "Baseline_Revenue",
+            "Simulated_Unit_Sales", "Simulated_Price", "Simulated_Revenue",
+            "Price_Change_Pct", "Revenue_Delta", "Elasticity_MAP",
+            "Market_Mode", "Market_k", "Market_Outside_Share",
+            "Eligible", "Group_ID", "Outside_Quantity",
+        }
+        missing = required - set(self.data.columns)
+        if missing:
+            raise ValueError(f"MarketScenarioResult missing required columns: {missing}")
+
+
+@dataclass(frozen=True)
 class DecompositionResult:
     """Result from three-factor decomposition."""
     data: pd.DataFrame  # Grouped decomposition with Volume_Effect, Mix_Effect, Price_Effect, etc.

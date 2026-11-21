@@ -10,6 +10,7 @@ from .validation import check_price, check_elasticity, check_finite_response
 from .types import (
     FitEstimates, FitResult, ScenarioResult, DecompositionResult,
     ValueSharesResult, PosteriorSummary, FitResultDict, ScenarioResultDict,
+    MarketScenarioResult,
 )
 from .dashboard_adapter import matrix_to_price_changes, price_support
 from .dashboard_cache import (
@@ -19,6 +20,13 @@ from .dashboard_cache import (
 from .evaluation import (
     evaluate_rolling, EvaluationResult, FoldResult,
     evaluation_to_dataframe, print_evaluation_summary,
+)
+from .market import (
+    MarketConfig,
+    simulate_market_scenario,
+    aggregate_to_groups,
+    get_gainers_losers,
+    market_revenue_bridge,
 )
 
 __all__ = [
@@ -60,4 +68,10 @@ __all__ = [
     "FoldResult",
     "evaluation_to_dataframe",
     "print_evaluation_summary",
+    "MarketConfig",
+    "MarketScenarioResult",
+    "simulate_market_scenario",
+    "aggregate_to_groups",
+    "get_gainers_losers",
+    "market_revenue_bridge",
 ]
