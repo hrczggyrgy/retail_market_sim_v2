@@ -2,6 +2,8 @@
 
 Explore how SKU-retailer price changes could affect revenue, demand, and value share in an observed POS dataset. This project combines a hierarchical Bayesian demand model with an interactive scenario dashboard and explicit accounting and modeling limitations.
 
+**Live demo:** https://retailmarketsim.streamlit.app/
+
 ## The decision
 
 **Should a category manager discount Cola 2L Bottle at Nexus Retail Group, hold its price, or test a modest increase?**
@@ -10,6 +12,10 @@ The built-in example estimates that a 20% discount increases modeled revenue for
 
 ## Quickstart
 
+### Live demo
+Try the dashboard instantly at **https://retailmarketsim.streamlit.app/**
+
+### Local development
 ```bash
 python -m venv .venv
 source .venv/bin/activate

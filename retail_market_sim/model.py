@@ -463,12 +463,11 @@ def fit_model_mcmc(
     diagnostics = _run_mcmc_diagnostics(trace, var_names=var_names)
     
     if require_diagnostics and not diagnostics.passed_gates:
-        warnings.warn(
+        raise RuntimeError(
             f"MCMC diagnostics gates not passed: divergences={diagnostics.divergences}, "
             f"max_rhat={diagnostics.max_rhat:.4f}, min_bulk_ess={diagnostics.min_bulk_ess:.0f}, "
             f"min_tail_ess={diagnostics.min_tail_ess:.0f}. "
-            f"Posterior may not be reliable for decision-making.",
-            UserWarning
+            f"Posterior intervals withheld. Gate criteria: {diagnostics.gate_criteria}"
         )
 
     return (

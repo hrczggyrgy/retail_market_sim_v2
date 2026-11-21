@@ -252,7 +252,7 @@ def test_value_shares_zero_numerator_positive_denominator():
 
 
 def test_failed_sampling_run_cleans_up_and_leaves_prior_results(cells, tmp_path, monkeypatch):
-    """A failed sampling run should clean up its run directory and not affect prior runs."""
+    """A failed sampling run should not create a new run directory and not affect prior runs."""
     import sim
     estimates = cells[["Category", "Brand", "SKU"]].copy()
     estimates["Elasticity_MAP"] = [-1.5, -1.5]
@@ -275,14 +275,14 @@ def test_failed_sampling_run_cleans_up_and_leaves_prior_results(cells, tmp_path,
     assert (first_run_dir / "scenario_detail.csv").is_file()
     assert (first_run_dir / "run_manifest.json").is_file()
     
-    # Second run: sampling fails (fit_model_mcmc raises)
+    # Second run: sampling fails (fit_model_mcmc raises RuntimeError)
+    # Now the CLI handles the error gracefully and exits cleanly
     with patch("sys.argv", ["sim.py", "--scenario", "nexus_cola_20pct", "--sample"]), \
             patch.object(sim, "load_data", return_value=(cells, [])), \
             patch.object(sim, "fit_model_map", return_value=fitted), \
             patch.object(sim, "build_named_scenario", return_value=target), \
             patch.object(sim, "fit_model_mcmc", side_effect=RuntimeError("MCMC failed")):
-        with pytest.raises(RuntimeError, match="MCMC failed"):
-            sim.main()
+        sim.main()  # Should exit cleanly without raising
     
     # First run directory should still exist and be intact
     assert first_run_dir.exists()

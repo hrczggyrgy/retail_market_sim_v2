@@ -29,6 +29,7 @@ class FoldResult:
     # Metrics
     mae_packs: float
     wapec: float  # Weighted Absolute Percentage Error (when denom > 0)
+    pred_coverage: float  # Fraction of scored rows with finite predictions
     coverage_in_range: float  # Fraction of test prices within historical range
     # Baseline comparison
     seasonal_naive_mae: float
@@ -44,6 +45,7 @@ class EvaluationResult:
     # Aggregate metrics
     mean_mae_packs: float
     mean_wapec: float
+    mean_pred_coverage: float
     mean_coverage_in_range: float
     mean_seasonal_naive_mae: float
     mean_last_observed_mae: float
@@ -83,16 +85,23 @@ def _make_predictions(
     check_elasticity(beta)
     
     # For test predictions, we need the price centering from training
-    # Use the pair_price_means from training
+    # Use the pair_price_means from training - store one mean per unique pair
     pair_lookup = prepared_train["pair_lookup"]
     pair_price_means = prepared_train.get("pair_price_means")
     
     if pair_price_means is None:
-        # Recompute from training data
+        # Recompute from training data - one mean per unique pair
         train = prepared_train["train"]
         log_p = np.log(train["Price"].to_numpy(float))
         pair_idx = prepared_train["pair_idx"]
-        pair_price_means = pd.Series(log_p).groupby(pair_idx).transform("mean").to_numpy()
+        # Compute mean per unique pair, not per row
+        pair_means_series = pd.Series(log_p, index=pair_idx).groupby(level=0).mean()
+        # Store as array indexed by pair_id (0 to n_pairs-1)
+        n_pairs = len(prepared_train["pairs"])
+        pair_price_means = np.zeros(n_pairs)
+        pair_price_means[pair_means_series.index] = pair_means_series.values
+        # Cache for reuse
+        prepared_train["pair_price_means"] = pair_price_means
     
     # Get pair indices for test data
     test_pair_idx = pair_lookup.get_indexer(
@@ -265,21 +274,28 @@ def evaluate_rolling(
             last_pred[CELL_KEYS + ["Last_Pred"]], on=CELL_KEYS, how="left"
         )
         
-        # Compute metrics
+        # Compute metrics - use finite prediction mask for both numerator and denominator
         mask = pred_merged["Actual_Unit_Sales"] >= 0  # All valid rows
         actual = pred_merged.loc[mask, "Actual_Unit_Sales"]
         pred = pred_merged.loc[mask, "Predicted_Unit_Sales"]
         seasonal = pred_merged.loc[mask, "Seasonal_Pred"]
         last = pred_merged.loc[mask, "Last_Pred"]
         
-        # MAE in packs
-        mae = np.mean(np.abs(pred - actual))
+        # Finite prediction mask - use same mask for both numerator and denominator
+        finite_pred = pred.notna()
+        actual_finite = actual[finite_pred]
+        pred_finite = pred[finite_pred]
         
-        # WAPE (Weighted Absolute Percentage Error) - include all rows in numerator,
-        # require positive aggregate actual for denominator
-        denom = np.sum(actual)
+        # Prediction coverage - fraction of scored rows with finite predictions
+        pred_coverage = finite_pred.mean() if len(finite_pred) > 0 else 0.0
+        
+        # MAE in packs (only on finite predictions)
+        mae = np.mean(np.abs(pred_finite - actual_finite)) if len(pred_finite) > 0 else np.nan
+        
+        # WAPE - use same finite mask for numerator and denominator
+        denom = np.sum(actual_finite)
         if denom > 0:
-            wapec = np.sum(np.abs(pred - actual)) / denom
+            wapec = np.sum(np.abs(pred_finite - actual_finite)) / denom
         else:
             wapec = np.nan
         
@@ -318,6 +334,7 @@ def evaluate_rolling(
             predictions=pred_merged,
             mae_packs=mae,
             wapec=wapec,
+            pred_coverage=pred_coverage,
             coverage_in_range=in_range,
             seasonal_naive_mae=seasonal_mae,
             last_observed_mae=last_mae,
@@ -332,6 +349,7 @@ def evaluate_rolling(
         config=config,
         mean_mae_packs=np.mean([f.mae_packs for f in valid_folds]) if valid_folds else np.nan,
         mean_wapec=np.nanmean([f.wapec for f in valid_folds]) if valid_folds else np.nan,
+        mean_pred_coverage=np.mean([f.pred_coverage for f in valid_folds]) if valid_folds else np.nan,
         mean_coverage_in_range=np.mean([f.coverage_in_range for f in valid_folds]) if valid_folds else np.nan,
         mean_seasonal_naive_mae=np.nanmean([f.seasonal_naive_mae for f in valid_folds]) if valid_folds else np.nan,
         mean_last_observed_mae=np.nanmean([f.last_observed_mae for f in valid_folds]) if valid_folds else np.nan,
@@ -405,6 +423,7 @@ def evaluation_to_dataframe(result: EvaluationResult) -> dict[str, pd.DataFrame]
             "test_positive_rows": f.test_positive_rows,
             "mae_packs": f.mae_packs,
             "wapec": f.wapec,
+            "pred_coverage": f.pred_coverage,
             "coverage_in_range": f.coverage_in_range,
             "seasonal_naive_mae": f.seasonal_naive_mae,
             "last_observed_mae": f.last_observed_mae,
@@ -463,6 +482,7 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
         print(f"  Period {f.test_period} (train: {f.train_periods_count} periods, test rows: {f.test_rows}):")
         print(f"    MAE (packs): {f.mae_packs:.2f}")
         print(f"    WAPE: {f.wapec:.4f}" if not np.isnan(f.wapec) else "    WAPE: N/A")
+        print(f"    Prediction coverage: {f.pred_coverage:.2%}")
         print(f"    Coverage in historical range: {f.coverage_in_range:.2%}")
         print(f"    Seasonal naive MAE: {f.seasonal_naive_mae:.2f}" if not np.isnan(f.seasonal_naive_mae) else "    Seasonal naive MAE: N/A")
         print(f"    Last observed MAE: {f.last_observed_mae:.2f}" if not np.isnan(f.last_observed_mae) else "    Last observed MAE: N/A")
@@ -471,6 +491,7 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
     print("Aggregate metrics:")
     print(f"  Mean MAE (packs): {result.mean_mae_packs:.2f}" if not np.isnan(result.mean_mae_packs) else "  Mean MAE (packs): N/A")
     print(f"  Mean WAPE: {result.mean_wapec:.4f}" if not np.isnan(result.mean_wapec) else "  Mean WAPE: N/A")
+    print(f"  Mean prediction coverage: {result.mean_pred_coverage:.2%}")
     print(f"  Mean coverage in range: {result.mean_coverage_in_range:.2%}")
     print(f"  Mean seasonal naive MAE: {result.mean_seasonal_naive_mae:.2f}" if not np.isnan(result.mean_seasonal_naive_mae) else "  Mean seasonal naive MAE: N/A")
     print(f"  Mean last observed MAE: {result.mean_last_observed_mae:.2f}" if not np.isnan(result.mean_last_observed_mae) else "  Mean last observed MAE: N/A")
