@@ -16,6 +16,7 @@ dependencies = [
     "arviz>=0.16",
     "streamlit>=1.30",
     "plotly>=5.18",
+    "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
