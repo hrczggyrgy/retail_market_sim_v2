@@ -7,6 +7,7 @@ from .validation import (
     check_elasticity, check_finite_quantities_revenue, check_finite_response,
     check_price, check_product_mapping, reconcile_revenue, validate_scenario_targets,
 )
+from .types import ScenarioResultDict
 
 
 def _validate_baseline(baseline: pd.DataFrame) -> None:
@@ -67,6 +68,12 @@ def simulate_scenario(
     result["Volume_Effect"] = (q1 - q0) * p0
     reconcile_revenue(result["Revenue_Delta"], result["Price_Effect"], result["Volume_Effect"])
     return result
+
+
+def to_scenario_result(df: pd.DataFrame) -> ScenarioResultDict:
+    """Convert a scenario DataFrame to a typed ScenarioResult."""
+    from .types import ScenarioResult
+    return {"data": ScenarioResult(data=df)}
 
 
 def summarize_revenue_draws(revenue_draws: np.ndarray) -> dict:

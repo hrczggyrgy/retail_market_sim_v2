@@ -19,7 +19,7 @@ def cells():
     return pd.DataFrame({
         "Category": ["C", "C"], "Retailer": ["R", "R"], "Brand": ["B", "B"],
         "SKU": ["S1", "S2"], "Price": [10., 5.], "Unit_Sales": [100., 100.],
-        "Sales_Revenue": [1000., 500.], "Pack_Size": ["1", "1"],
+        "Sales_Revenue": [1000., 500.], "Pack_Size": [1.0, 1.0],
         "Period": [1, 1], "Season": [0, 0], "Month": ["Month 1", "Month 1"],
     })
 
@@ -105,4 +105,9 @@ def test_cli_entrypoint_writes_artifacts(cells, tmp_path, monkeypatch):
         sim, "load_data", return_value=(cells, []),
     ), patch.object(sim, "fit_model_map", return_value=fitted):
         sim.main()
-    assert (tmp_path / "outputs" / "scenario_detail.csv").is_file()
+    out = tmp_path / "outputs"
+    runs_dir = out / "runs"
+    run_dirs = list(runs_dir.iterdir())
+    assert len(run_dirs) == 1
+    run_dir = run_dirs[0]
+    assert (run_dir / "scenario_detail.csv").is_file()

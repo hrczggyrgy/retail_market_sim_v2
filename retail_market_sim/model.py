@@ -10,6 +10,7 @@ import pandas as pd
 import pymc as pm
 
 from .data import PRODUCT_KEYS, CELL_KEYS, tuple_index
+from .types import FitResultDict
 
 RANDOM_SEED = 42
 
@@ -220,13 +221,13 @@ def _build_model(prepared: dict, config: ModelConfig) -> pm.Model:
 def fit_model_map(
     data: pd.DataFrame,
     config: ModelConfig | None = None,
-) -> Dict[str, Any]:
+) -> FitResultDict:
     """
     Fit the hierarchical log-log demand model using MAP estimation.
 
     Returns
     -------
-    dict with keys:
+    FitResultDict with keys:
         estimates: DataFrame with elasticities and support diagnostics
         converged: bool
         message: optimizer message
@@ -313,9 +314,115 @@ def fit_model_map(
 # MCMC Fitting
 # =============================================================================
 
+@dataclass
+class MCMCDiagnostics:
+    """MCMC convergence diagnostics from ArviZ."""
+    divergences: int
+    max_rhat: float
+    mean_rhat: float
+    min_bulk_ess: float
+    min_tail_ess: float
+    max_rhat_params: list[str]  # Parameters with highest R-hat
+    min_ess_params: list[str]  # Parameters with lowest ESS
+    passed_gates: bool
+    gate_criteria: dict[str, Any]
+
+
+def _run_mcmc_diagnostics(trace, var_names: list[str] | None = None) -> MCMCDiagnostics:
+    """Run ArviZ diagnostics on MCMC trace."""
+    import arviz as az
+    
+    # Get posterior sample
+    post = az.convert_to_inference_data(trace)
+    
+    # Divergences
+    divergences = int(post.posterior_predictive.get("diverging", 0).sum()) if hasattr(post, 'posterior_predictive') else 0
+    # Also check sample stats
+    if "diverging" in post.sample_stats:
+        divergences = int(post.sample_stats["diverging"].sum())
+    
+    # R-hat
+    rhat = az.rhat(post, var_names=var_names)
+    rhat_values = []
+    for var in rhat.data_vars:
+        vals = rhat[var].values.flatten()
+        rhat_vals = vals[np.isfinite(vals)]
+        if len(rhat_vals) > 0:
+            rhat_values.extend(rhat_vals.tolist())
+    
+    max_rhat = float(np.max(rhat_values)) if rhat_values else 1.0
+    mean_rhat = float(np.mean(rhat_values)) if rhat_values else 1.0
+    
+    # Find parameters with highest R-hat
+    rhat_by_param = {}
+    for var in rhat.data_vars:
+        vals = rhat[var].values.flatten()
+        rhat_vals = vals[np.isfinite(vals)]
+        if len(rhat_vals) > 0:
+            rhat_by_param[var] = float(np.max(rhat_vals))
+    
+    max_rhat_params = sorted(rhat_by_param, key=rhat_by_param.get, reverse=True)[:5]
+    
+    # ESS
+    ess = az.ess(post, var_names=var_names, method="bulk")
+    tail_ess = az.ess(post, var_names=var_names, method="tail")
+    
+    bulk_ess_vals = []
+    tail_ess_vals = []
+    ess_by_param = {}
+    for var in ess.data_vars:
+        bulk_vals = ess[var].values.flatten()
+        tail_vals = tail_ess[var].values.flatten()
+        bulk_finite = bulk_vals[np.isfinite(bulk_vals)]
+        tail_finite = tail_vals[np.isfinite(tail_vals)]
+        if len(bulk_finite) > 0:
+            bulk_ess_vals.extend(bulk_finite.tolist())
+            ess_by_param[f"{var}_bulk"] = float(np.min(bulk_finite))
+        if len(tail_finite) > 0:
+            tail_ess_vals.extend(tail_finite.tolist())
+            ess_by_param[f"{var}_tail"] = float(np.min(tail_finite))
+    
+    min_bulk_ess = float(np.min(bulk_ess_vals)) if bulk_ess_vals else 0.0
+    min_tail_ess = float(np.min(tail_ess_vals)) if tail_ess_vals else 0.0
+    
+    min_ess_params = sorted(ess_by_param, key=ess_by_param.get)[:5]
+    
+    # Gate criteria (configurable thresholds)
+    gate_criteria = {
+        "max_divergences": 0,
+        "max_rhat": 1.01,
+        "min_bulk_ess": 400,
+        "min_tail_ess": 400,
+    }
+    
+    passed_gates = (
+        divergences <= gate_criteria["max_divergences"] and
+        max_rhat <= gate_criteria["max_rhat"] and
+        min_bulk_ess >= gate_criteria["min_bulk_ess"] and
+        min_tail_ess >= gate_criteria["min_tail_ess"]
+    )
+    
+    return MCMCDiagnostics(
+        divergences=divergences,
+        max_rhat=max_rhat,
+        mean_rhat=mean_rhat,
+        min_bulk_ess=min_bulk_ess,
+        min_tail_ess=min_tail_ess,
+        max_rhat_params=max_rhat_params,
+        min_ess_params=min_ess_params,
+        passed_gates=passed_gates,
+        gate_criteria=gate_criteria,
+    )
+
+
+# =============================================================================
+# MCMC Fitting
+# =============================================================================
+
 def fit_model_mcmc(
     data: pd.DataFrame,
     config: ModelConfig | None = None,
+    require_diagnostics: bool = True,
 ) -> Tuple:
     """
     Fit the same model with MCMC for full posterior inference.
@@ -323,7 +430,7 @@ def fit_model_mcmc(
     Returns
     -------
     trace, products, pairs, categories, retailers, sku_idx, pair_idx,
-    category_idx, retailer_idx, product_category_idx
+    category_idx, retailer_idx, product_category_idx, diagnostics
     """
     if config is None:
         config = ModelConfig()
@@ -341,6 +448,20 @@ def fit_model_mcmc(
             random_seed=RANDOM_SEED,
         )
 
+    # Run diagnostics
+    var_names = ["beta", "alpha", "sigma", "beta_category", "beta_offset", 
+                 "retailer_raw", "pair_effect", "season_raw", "trend"]
+    diagnostics = _run_mcmc_diagnostics(trace, var_names=var_names)
+    
+    if require_diagnostics and not diagnostics.passed_gates:
+        warnings.warn(
+            f"MCMC diagnostics gates not passed: divergences={diagnostics.divergences}, "
+            f"max_rhat={diagnostics.max_rhat:.4f}, min_bulk_ess={diagnostics.min_bulk_ess:.0f}, "
+            f"min_tail_ess={diagnostics.min_tail_ess:.0f}. "
+            f"Posterior may not be reliable for decision-making.",
+            UserWarning
+        )
+
     return (
         trace,
         prepared["products"],
@@ -352,4 +473,5 @@ def fit_model_mcmc(
         prepared["category_idx"],
         prepared["retailer_idx"],
         prepared["product_category_idx"],
+        diagnostics,
     )

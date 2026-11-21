@@ -21,7 +21,12 @@ def _ensure_equiv_volumes(scenario: pd.DataFrame) -> pd.DataFrame:
 
 
 def three_factor_decomposition(scenario: pd.DataFrame, group_columns: list) -> pd.DataFrame:
-    """Exact sequential Volume -> Mix -> Price attribution using litres."""
+    """Exact sequential Volume -> Mix -> Price attribution using litres.
+
+    Strict API: requires positive total equivalized volume in every group.
+    Use `three_factor_decomposition_report` for a reporting wrapper that handles
+    zero-volume groups gracefully.
+    """
     scenario = _ensure_equiv_volumes(scenario)
     if not group_columns:
         scenario = scenario.copy()
@@ -62,6 +67,95 @@ def three_factor_decomposition(scenario: pd.DataFrame, group_columns: list) -> p
     return g
 
 
+def _decomposition_group_status(q0: float, q1: float, r0: float, r1: float) -> tuple[str, str]:
+    """Determine status and bridge availability for a decomposition group.
+
+    Returns (status, bridge_status) where:
+    - status: 'positive', 'zero_to_zero', 'one_sided_zero'
+    - bridge_status: 'available', 'no sales', 'bridge unavailable'
+    """
+    if q0 > 0 and q1 > 0:
+        return 'positive', 'available'
+    elif q0 == 0 and q1 == 0 and r0 == 0 and r1 == 0:
+        return 'zero_to_zero', 'no sales'
+    else:
+        return 'one_sided_zero', 'bridge unavailable'
+
+
+def three_factor_decomposition_report(scenario: pd.DataFrame, group_columns: list) -> pd.DataFrame:
+    """Reporting wrapper for three-factor decomposition that handles zero-volume groups.
+
+    For zero-to-zero volume and revenue: returns zero absolute change with 'no sales' status
+    and undefined mix shares. For one-sided zero: shows absolute revenue change and
+    'bridge unavailable' rather than inventing shares.
+    """
+    scenario = _ensure_equiv_volumes(scenario)
+
+    # Handle empty group_columns (market total) by using a temporary column
+    if not group_columns:
+        scenario = scenario.copy()
+        scenario["_total_market"] = 1
+        effective_group_columns = ["_total_market"]
+    else:
+        effective_group_columns = list(group_columns)
+
+    # Compute group totals first
+    g = scenario.groupby(effective_group_columns, as_index=False, observed=True).agg(
+        Q0=("Equiv_Volume_Baseline", "sum"), Q1=("Equiv_Volume_Simulated", "sum"),
+        R0=("Baseline_Revenue", "sum"), R1=("Simulated_Revenue", "sum"))
+
+    # Compute revenue delta for all groups
+    g["Revenue_Delta"] = g["R1"] - g["R0"]
+
+    # Determine status for each group
+    statuses = []
+    bridge_statuses = []
+    for _, row in g.iterrows():
+        status, bridge_status = _decomposition_group_status(row["Q0"], row["Q1"], row["R0"], row["R1"])
+        statuses.append(status)
+        bridge_statuses.append(bridge_status)
+
+    g["_group_status"] = statuses
+    g["_bridge_status"] = bridge_statuses
+
+    # For positive groups, compute full decomposition
+    positive_mask = g["_group_status"] == 'positive'
+    if positive_mask.any():
+        pos_groups = g.loc[positive_mask, effective_group_columns].copy()
+        # Filter scenario to only positive groups
+        pos_scenario = scenario.merge(pos_groups, on=effective_group_columns, how="inner", validate="many_to_one")
+        pos_decomp = three_factor_decomposition(pos_scenario, effective_group_columns)
+        # Drop duplicate columns from pos_decomp before merge (Q0, Q1, R0, R1, Revenue_Delta are already in g)
+        decomp_cols = [c for c in pos_decomp.columns if c not in ["Q0", "Q1", "R0", "R1", "Revenue_Delta"]]
+        pos_decomp = pos_decomp[decomp_cols]
+        # Merge results back
+        g = g.merge(pos_decomp, on=effective_group_columns, how="left", validate="one_to_one")
+
+    # For zero-to-zero groups: zero change, no bridge
+    zero_mask = g["_group_status"] == 'zero_to_zero'
+    g.loc[zero_mask, "Volume_Effect"] = 0.0
+    g.loc[zero_mask, "Mix_Effect"] = 0.0
+    g.loc[zero_mask, "Price_Effect"] = 0.0
+    g.loc[zero_mask, "Decomposition_Sum"] = 0.0
+    g.loc[zero_mask, "Revenue_Delta"] = 0.0
+
+    # For one-sided zero groups: show revenue delta, no bridge
+    onesided_mask = g["_group_status"] == 'one_sided_zero'
+    g.loc[onesided_mask, "Volume_Effect"] = np.nan
+    g.loc[onesided_mask, "Mix_Effect"] = np.nan
+    g.loc[onesided_mask, "Price_Effect"] = np.nan
+    g.loc[onesided_mask, "Decomposition_Sum"] = np.nan
+    # Revenue_Delta is already correct from groupby
+
+    # Reorder columns for output - use original group_columns for display
+    display_columns = list(group_columns) if group_columns else []
+    cols = display_columns + ["Q0", "Q1", "R0", "R1", "Volume_Effect", "Mix_Effect", "Price_Effect",
+                               "Decomposition_Sum", "Revenue_Delta", "_group_status", "_bridge_status"]
+    g = g[cols]
+
+    return g
+
+
 def value_shares(scenario: pd.DataFrame, group_columns: list, parent_columns: list | None = None) -> pd.DataFrame:
     grouped = scenario.groupby(group_columns, as_index=False, observed=True).agg(
         Baseline_Revenue=("Baseline_Revenue", "sum"), Simulated_Revenue=("Simulated_Revenue", "sum"))
@@ -71,7 +165,24 @@ def value_shares(scenario: pd.DataFrame, group_columns: list, parent_columns: li
     else:
         baseline_denominator = grouped["Baseline_Revenue"].sum()
         simulated_denominator = grouped["Simulated_Revenue"].sum()
-    grouped["Baseline_Share_Pct"] = grouped["Baseline_Revenue"] / baseline_denominator * 100
-    grouped["Simulated_Share_Pct"] = grouped["Simulated_Revenue"] / simulated_denominator * 100
+
+    # Compute shares, handling zero denominators explicitly
+    baseline_share = grouped["Baseline_Revenue"] / baseline_denominator * 100
+    simulated_share = grouped["Simulated_Revenue"] / simulated_denominator * 100
+
+    # Replace inf/NaN from zero denominators with explicit "N/A (no revenue)"
+    # Use a string marker that can be displayed in the UI
+    grouped["Baseline_Share_Pct"] = baseline_share.replace([np.inf, -np.inf], np.nan)
+    grouped["Simulated_Share_Pct"] = simulated_share.replace([np.inf, -np.inf], np.nan)
+
+    # For zero denominator, mark as "N/A (no revenue)" - we use NaN internally
+    # but the display layer should render this appropriately
+    zero_baseline = baseline_denominator == 0
+    zero_simulated = simulated_denominator == 0
+    if zero_baseline.any():
+        grouped.loc[zero_baseline, "Baseline_Share_Pct"] = np.nan
+    if zero_simulated.any():
+        grouped.loc[zero_simulated, "Simulated_Share_Pct"] = np.nan
+
     grouped["Share_Change_pp"] = grouped["Simulated_Share_Pct"] - grouped["Baseline_Share_Pct"]
-    return grouped.replace([np.inf, -np.inf], np.nan)
+    return grouped

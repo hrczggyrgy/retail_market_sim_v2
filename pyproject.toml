@@ -24,6 +24,7 @@ dev = [
     "ruff>=0.1",
     "mypy>=1.7",
     "pytest-cov>=4.1",
+    "xarray>=2023.1",
 ]
 
 [tool.setuptools.packages.find]
