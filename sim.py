@@ -209,6 +209,8 @@ def _run_evaluation_mode(args, data: pd.DataFrame, config: ModelConfig) -> None:
         "prior_grid": prior_grid,
         "generated_at": generated_at,
         "environment": _get_environment_info(),
+        "price_input": "realized_holdout_unit_value_revenue_over_units",
+        "note": "Retrospective conditional evaluation using observed test-period prices; not a prospective forecast.",
     }
     (run_dir / "evaluation_settings.json").write_text(json.dumps(settings, indent=2))
     

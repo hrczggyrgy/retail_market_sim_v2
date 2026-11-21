@@ -194,10 +194,18 @@ def main() -> None:
     r1 = float(scenario["Simulated_Revenue"].sum())
     q0 = float(scenario["Baseline_Unit_Sales"].sum())
     q1 = float(scenario["Simulated_Unit_Sales"].sum())
-    changed = scenario["Price_Change_Pct"].abs().gt(1e-7)
+    
+    # Canonical edited keys from the validated price_changes dict (same threshold everywhere)
+    edited_keys = list(changes.keys())
+    changed_mask = np.zeros(len(scenario), dtype=bool)
+    for key in edited_keys:
+        mask = np.ones(len(scenario), dtype=bool)
+        for col, val in zip(CELL_KEYS, key):
+            mask &= scenario[col].eq(val).to_numpy()
+        changed_mask |= mask
     
     # Support status for edited cells
-    edited_support = support.loc[changed].copy()
+    edited_support = support.loc[changed_mask].copy()
     outside = edited_support["Outside_Observed_Range"]
     unknown = edited_support["Support_Status"] == "unknown"
     in_range = edited_support["Support_Status"] == "in_range"
@@ -212,7 +220,7 @@ def main() -> None:
     
     if changes:
         # Show detailed edited-cell impact with support status
-        selected = scenario.loc[changed].copy()
+        selected = scenario.loc[changed_mask].copy()
         # Don't include Price_Change_Pct in support_cols to avoid merge conflict (already in selected)
         support_cols = edited_support[CELL_KEYS + ["Support_Status", "Historical_Min_Price", "Historical_Max_Price", "Elasticity", "Zero_Anchor"]]
         edited_detail = selected[CELL_KEYS + ["Baseline_Price", "Simulated_Price", "Price_Change_Pct", "Revenue_Delta", "Baseline_Unit_Sales", "Simulated_Unit_Sales"]].merge(
@@ -459,15 +467,13 @@ def main() -> None:
     # Price sweep for target cell
     if changes:
         st.subheader("Target cell price sweep")
-        # Use the same cell selector as the detailed view for consistency
-        # Build selectable list of edited cells
+        # Build selectable list from canonical edited keys (same as changes dict)
         sweep_cell_options = {}
-        for _, row in edited_detail.iterrows():
-            key = (row["Category"], row["Retailer"], row["Brand"], row["SKU"])
-            label = f"{row['Category']} | {row['Retailer']} | {row['Brand']} | {row['SKU']}"
+        for key in edited_keys:
+            label = f"{key[0]} | {key[1]} | {key[2]} | {key[3]}"
             sweep_cell_options[key] = label
         
-        # Default to first edited cell, but allow user to select any
+        # Default to first edited cell
         sweep_default_idx = 0
         # Try to match the previously selected cell from detailed view
         if 'selected_key' in locals() and selected_key in sweep_cell_options:
@@ -482,6 +488,7 @@ def main() -> None:
         )
         
         target_cell = sweep_target_key
+        # Find target row in edited_detail (which is built from edited_keys)
         target_row = edited_detail[
             (edited_detail["Category"] == target_cell[0]) &
             (edited_detail["Retailer"] == target_cell[1]) &
@@ -496,18 +503,18 @@ def main() -> None:
         hist_max = target_row.get("Historical_Max_Price", np.nan)
         zero_anchor = target_row.get("Zero_Anchor", False)
         
-        # Default sweep range to historical range when available, otherwise baseline ±50%
-        # Ensure min < max by clamping defaults
-        default_min = max(0.01, hist_min if not np.isnan(hist_min) else baseline_price * 0.5)
-        default_max = min(baseline_price * 2, hist_max if not np.isnan(hist_max) else baseline_price * 1.5)
-        if default_min >= default_max:
-            default_min = 0.01
-            default_max = baseline_price * 2
+        # Default sweep range: historical range when available, else ±50% of baseline
+        # Lower bound: never below a small positive floor; upper bound: at least 2x baseline
+        floor = max(0.01, baseline_price * 0.01)  # at least 1% of baseline or 0.01
+        default_min = hist_min if not np.isnan(hist_min) else baseline_price * 0.5
+        default_max = hist_max if not np.isnan(hist_max) else baseline_price * 1.5
+        default_min = max(floor, default_min)
+        default_max = max(default_min * 1.01, default_max, baseline_price * 2)
         
         # Sweep range - use dynamic keys based on target cell to reset when target changes
         cell_key_str = f"{target_cell[0]}_{target_cell[1]}_{target_cell[2]}_{target_cell[3]}"
-        sweep_min = st.number_input("Sweep min price", 0.01, baseline_price * 2, default_min, 0.01, key=f"sweep_min_{cell_key_str}")
-        sweep_max = st.number_input("Sweep max price", sweep_min, baseline_price * 2, default_max, 0.01, key=f"sweep_max_{cell_key_str}")
+        sweep_min = st.number_input("Sweep min price", floor, default_max * 2, default_min, 0.01, key=f"sweep_min_{cell_key_str}")
+        sweep_max = st.number_input("Sweep max price", sweep_min, default_max * 2, default_max, 0.01, key=f"sweep_max_{cell_key_str}")
         n_points = st.slider("Number of points", 5, 50, 20, key=f"sweep_points_{cell_key_str}")
         
         # Show support status for sweep bounds
