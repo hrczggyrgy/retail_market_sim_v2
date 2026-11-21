@@ -31,12 +31,26 @@ class FoldResult:
     wapec: float  # Weighted Absolute Percentage Error (when denom > 0)
     pred_coverage: float  # Fraction of scored rows with finite predictions
     coverage_in_range: float  # Fraction of test prices within historical range
-    # Baseline comparison
+    # Coverage breakdown by type
+    coverage_supported_positive: float
+    coverage_unseen_sku: float
+    coverage_unseen_pair: float
+    coverage_no_positive_history: float
+    coverage_zero_sales: float
+    # Baseline comparison (standalone MAE against actual on their own valid rows)
     seasonal_naive_mae: float
     last_observed_mae: float
-    # Matched-row comparisons (model vs baselines on same finite-prediction rows)
-    model_vs_seasonal_mae: float
-    model_vs_last_mae: float
+    # Matched-row comparisons: on rows where actual, model, AND comparator are all finite
+    # Seasonal
+    matched_seasonal_n: int
+    matched_model_mae_vs_seasonal: float  # Model MAE on matched rows
+    matched_seasonal_mae: float  # Seasonal MAE on matched rows
+    matched_model_minus_seasonal_mae: float  # Model MAE - Seasonal MAE (disagreement)
+    # Last observed
+    matched_last_n: int
+    matched_model_mae_vs_last: float  # Model MAE on matched rows
+    matched_last_mae: float  # Last observed MAE on matched rows
+    matched_model_minus_last_mae: float  # Model MAE - Last MAE (disagreement)
 
 
 @dataclass
@@ -50,10 +64,24 @@ class EvaluationResult:
     mean_wapec: float
     mean_pred_coverage: float
     mean_coverage_in_range: float
+    # Coverage breakdown aggregates
+    mean_coverage_supported_positive: float
+    mean_coverage_unseen_sku: float
+    mean_coverage_unseen_pair: float
+    mean_coverage_no_positive_history: float
+    mean_coverage_zero_sales: float
     mean_seasonal_naive_mae: float
     mean_last_observed_mae: float
-    mean_model_vs_seasonal_mae: float
-    mean_model_vs_last_mae: float
+    # Matched-row aggregates (seasonal)
+    mean_matched_seasonal_n: float
+    mean_matched_model_mae_vs_seasonal: float
+    mean_matched_seasonal_mae: float
+    mean_matched_model_minus_seasonal_mae: float
+    # Matched-row aggregates (last observed)
+    mean_matched_last_n: float
+    mean_matched_model_mae_vs_last: float
+    mean_matched_last_mae: float
+    mean_matched_model_minus_last_mae: float
     # Prior sensitivity
     prior_sensitivity: dict[str, Any] | None = None
 
@@ -70,7 +98,11 @@ def _make_predictions(
     prepared_train: dict,
     config: ModelConfig,
 ) -> pd.DataFrame:
-    """Make predictions on test data using fitted model."""
+    """Make predictions on test data using fitted model.
+    
+    This is a RETROSPECTIVE evaluation using observed test-period prices for centering.
+    It does not represent a genuine prospective forecast where future prices are unknown.
+    """
     # Get elasticity estimates
     estimates_df = fitted_estimates.data if hasattr(fitted_estimates, "data") else fitted_estimates
     
@@ -80,14 +112,16 @@ def _make_predictions(
         on=PRODUCT_KEYS, how="left", validate="many_to_one",
     )
     
-    # Check for missing elasticities
+    # Track missing elasticities (new SKUs not in training)
     missing_elast = test_with_est["Elasticity_MAP"].isna()
     if missing_elast.any():
         missing_skus = test_with_est.loc[missing_elast, PRODUCT_KEYS].drop_duplicates()
-        raise ValueError(f"Missing elasticity estimates for SKUs in test set: {missing_skus.to_dict('records')}")
+        warnings.warn(f"Test data contains {len(missing_skus)} SKUs not in training data; predictions will be NaN for these.")
     
     beta = test_with_est["Elasticity_MAP"].to_numpy(float)
-    check_elasticity(beta)
+    # Only check elasticity for non-missing
+    if not missing_elast.all():
+        check_elasticity(beta[~missing_elast])
     
     # For test predictions, we need the price centering from training
     # Use the pair_price_means from training - store one mean per unique pair
@@ -113,24 +147,46 @@ def _make_predictions(
         tuple_index(test_with_est, CELL_KEYS)
     )
     
-    # Check for unknown pairs - mark them for NaN predictions rather than aborting
+    # Check for unknown pairs (new SKU-retailer combinations)
     unknown_pairs = test_pair_idx == -1
     if unknown_pairs.any():
         unknown_cells = test_with_est.loc[unknown_pairs, CELL_KEYS].drop_duplicates()
         warnings.warn(f"Test data contains {len(unknown_cells)} unknown SKU-retailer pairs; predictions will be NaN for these.")
     
-    # Get pair price means for test data (use 0 for unknown pairs to avoid index error)
-    test_pair_price_means = np.where(unknown_pairs, 0.0, pair_price_means[np.where(unknown_pairs, 0, test_pair_idx)])
+    # Check for pairs with no positive training history (zero-only training)
+    # These have pair_price_means = 0 (placeholder), which centers on log(1) = 0
+    # We should track these separately and not score them
+    zero_history_pairs = np.zeros(len(test_pair_idx), dtype=bool)
+    if len(pair_price_means) > 0:
+        # Pairs with mean = 0 and no positive training observations
+        # We can detect this by checking if the pair had positive sales in training
+        train_positive_pairs = set(prepared_train["train"].loc[prepared_train["train"]["Unit_Sales"] > 0, CELL_KEYS].apply(tuple, axis=1))
+        test_pairs = test_with_est[CELL_KEYS].apply(tuple, axis=1)
+        zero_history_pairs = ~test_pairs.isin(train_positive_pairs).to_numpy()
+        if zero_history_pairs.any():
+            warnings.warn(f"Test data contains {zero_history_pairs.sum()} pairs with no positive training history; centering uses placeholder.")
+    
+    # Get pair price means for test data (NaN for unknown/zero-history pairs to avoid placeholder centering)
+    test_pair_price_means = np.full(len(test_pair_idx), np.nan)
+    valid_pair_mask = ~unknown_pairs & ~zero_history_pairs
+    if valid_pair_mask.any():
+        test_pair_price_means[valid_pair_mask] = pair_price_means[test_pair_idx[valid_pair_mask]]
     
     # Compute log price and centered price
     p0 = test_with_est["Price"].to_numpy(float)
     log_p0 = np.log(p0)
-    x_price = log_p0 - test_pair_price_means
+    x_price = np.full_like(log_p0, np.nan)
+    x_price[valid_pair_mask] = log_p0[valid_pair_mask] - test_pair_price_means[valid_pair_mask]
     
     # Get other indices
     sku_idx = prepared_train["product_lookup"].get_indexer(
         tuple_index(test_with_est, PRODUCT_KEYS)
     )
+    
+    # Track unknown SKUs
+    unknown_skus = sku_idx == -1
+    if unknown_skus.any():
+        warnings.warn(f"Test data contains {unknown_skus.sum()} unknown SKUs; predictions will be NaN for these.")
     
     # Season and trend
     categories = prepared_train["categories"]
@@ -146,7 +202,10 @@ def _make_predictions(
     beta_offset = np.asarray(fitted_point["beta_offset"], dtype=float)
     # beta_category is indexed by category, beta_offset by product (SKU)
     # Compute per-row elasticity: category elasticity + product offset
-    beta_map = beta_category[test_cat_idx] + config.beta_offset_scale * beta_offset[sku_idx]
+    beta_map = np.full(len(test_with_est), np.nan)
+    valid_sku = ~unknown_skus & ~missing_elast
+    if valid_sku.any():
+        beta_map[valid_sku] = beta_category[test_cat_idx[valid_sku]] + config.beta_offset_scale * beta_offset[sku_idx[valid_sku]]
     retailer_effect = np.asarray(fitted_point["retailer_raw"], dtype=float)
     retailer_effect = retailer_effect - retailer_effect.mean()
     pair_effect = np.asarray(fitted_point["pair_effect"], dtype=float)
@@ -154,29 +213,43 @@ def _make_predictions(
     season_effect = season_raw - season_raw.sum(axis=1, keepdims=True) / 12.0
     trend = np.asarray(fitted_point["trend"], dtype=float)
     
-    # Compute predictions
-    mu = (
-        alpha[sku_idx]
-        + retailer_effect[pd.Categorical(test_with_est["Retailer"], categories=prepared_train["retailers"]).codes]
-        + pair_effect[test_pair_idx]
-        + beta_map * x_price  # beta_map is already per-row
-        + season_effect[test_cat_idx, test_season_idx]
-        + trend[test_cat_idx] * time_years
-    )
+    # Compute predictions (only for rows with all required components)
+    mu = np.full(len(test_with_est), np.nan)
+    # Valid rows: have SKU, elasticity, pair price mean, and retailer
+    retailer_codes = pd.Categorical(test_with_est["Retailer"], categories=prepared_train["retailers"]).codes
+    valid_retailer = retailer_codes != -1
+    valid_all = valid_sku & valid_pair_mask & valid_retailer & ~missing_elast
+    
+    if valid_all.any():
+        mu[valid_all] = (
+            alpha[sku_idx[valid_all]]
+            + retailer_effect[retailer_codes[valid_all]]
+            + pair_effect[test_pair_idx[valid_all]]
+            + beta_map[valid_all] * x_price[valid_all]
+            + season_effect[test_cat_idx[valid_all], test_season_idx[valid_all]]
+            + trend[test_cat_idx[valid_all]] * time_years[valid_all]
+        )
     
     q_pred = np.exp(mu)
     q_actual = test_with_est["Unit_Sales"].to_numpy(float)
     
-    # Set NaN predictions for unknown pairs
-    q_pred = np.where(unknown_pairs, np.nan, q_pred)
+    # Set NaN predictions for all invalid rows
+    q_pred = np.where(valid_all, q_pred, np.nan)
     
-    # Build predictions DataFrame
+    # Build predictions DataFrame with coverage tracking
     pred_df = test_with_est[CELL_KEYS + ["Period", "Unit_Sales", "Price"]].copy()
     pred_df["Predicted_Unit_Sales"] = q_pred
     pred_df["Actual_Unit_Sales"] = q_actual
     pred_df["Prediction_Error"] = q_pred - q_actual
     pred_df["Abs_Error"] = np.abs(q_pred - q_actual)
-    pred_df["Elasticity"] = beta_map  # per-row elasticity
+    pred_df["Elasticity"] = beta_map
+    # Coverage flags
+    pred_df["Coverage_Type"] = "unknown"
+    pred_df.loc[valid_all, "Coverage_Type"] = "supported_positive"
+    pred_df.loc[missing_elast, "Coverage_Type"] = "unseen_sku"
+    pred_df.loc[unknown_pairs & ~missing_elast, "Coverage_Type"] = "unseen_pair"
+    pred_df.loc[zero_history_pairs & ~missing_elast & ~unknown_pairs, "Coverage_Type"] = "no_positive_history"
+    pred_df.loc[(test_with_est["Unit_Sales"] == 0) & valid_all, "Coverage_Type"] = "zero_sales"
     
     return pred_df
 
@@ -300,21 +373,38 @@ def evaluate_rolling(
         else:
             wapec = np.nan
         
-        # Seasonal naive MAE - only on rows where seasonal prediction exists AND prediction is finite
+        # Seasonal naive MAE - only on rows where seasonal prediction exists (standalone)
         seasonal_valid = np.isfinite(seasonal)
         seasonal_mae = np.mean(np.abs(seasonal[seasonal_valid] - actual[seasonal_valid])) if seasonal_valid.any() else np.nan
         
-        # Last observed MAE - only on rows where last prediction exists AND prediction is finite
+        # Last observed MAE - only on rows where last prediction exists (standalone)
         last_valid = np.isfinite(last)
         last_mae = np.mean(np.abs(last[last_valid] - actual[last_valid])) if last_valid.any() else np.nan
         
-        # Matched-row MAE: model vs seasonal naive on rows where both have finite predictions
-        both_valid = finite_pred & seasonal_valid
-        model_vs_seasonal_mae = np.mean(np.abs(pred[both_valid] - seasonal[both_valid])) if both_valid.any() else np.nan
+        # Matched-row comparisons: rows where actual, model, AND comparator are ALL finite
+        # Seasonal
+        matched_seasonal = finite_pred & seasonal_valid & np.isfinite(actual)
+        matched_seasonal_n = int(matched_seasonal.sum())
+        if matched_seasonal_n > 0:
+            matched_model_mae_vs_seasonal = float(np.mean(np.abs(pred[matched_seasonal] - actual[matched_seasonal])))
+            matched_seasonal_mae = float(np.mean(np.abs(seasonal[matched_seasonal] - actual[matched_seasonal])))
+            matched_model_minus_seasonal_mae = matched_model_mae_vs_seasonal - matched_seasonal_mae
+        else:
+            matched_model_mae_vs_seasonal = np.nan
+            matched_seasonal_mae = np.nan
+            matched_model_minus_seasonal_mae = np.nan
         
-        # Matched-row MAE: model vs last observed on rows where both have finite predictions
-        both_valid_last = finite_pred & last_valid
-        model_vs_last_mae = np.mean(np.abs(pred[both_valid_last] - last[both_valid_last])) if both_valid_last.any() else np.nan
+        # Last observed
+        matched_last = finite_pred & last_valid & np.isfinite(actual)
+        matched_last_n = int(matched_last.sum())
+        if matched_last_n > 0:
+            matched_model_mae_vs_last = float(np.mean(np.abs(pred[matched_last] - actual[matched_last])))
+            matched_last_mae = float(np.mean(np.abs(last[matched_last] - actual[matched_last])))
+            matched_model_minus_last_mae = matched_model_mae_vs_last - matched_last_mae
+        else:
+            matched_model_mae_vs_last = np.nan
+            matched_last_mae = np.nan
+            matched_model_minus_last_mae = np.nan
         
         # Coverage: fraction of test prices within historical range
         historical = train_data.loc[train_data["Unit_Sales"] > 0].groupby(CELL_KEYS)["Price"].agg(["min", "max"]).reset_index()
@@ -328,6 +418,14 @@ def evaluate_rolling(
             ).mean()
         else:
             in_range = 0.0
+        
+        # Coverage breakdown by type (from predictions)
+        total_rows = len(pred_merged)
+        coverage_supported_positive = (pred_merged["Coverage_Type"] == "supported_positive").mean() if total_rows > 0 else 0.0
+        coverage_unseen_sku = (pred_merged["Coverage_Type"] == "unseen_sku").mean() if total_rows > 0 else 0.0
+        coverage_unseen_pair = (pred_merged["Coverage_Type"] == "unseen_pair").mean() if total_rows > 0 else 0.0
+        coverage_no_positive_history = (pred_merged["Coverage_Type"] == "no_positive_history").mean() if total_rows > 0 else 0.0
+        coverage_zero_sales = (pred_merged["Coverage_Type"] == "zero_sales").mean() if total_rows > 0 else 0.0
         
         # Extract elasticities
         estimates_df = fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"]
@@ -345,14 +443,46 @@ def evaluate_rolling(
             wapec=wapec,
             pred_coverage=pred_coverage,
             coverage_in_range=in_range,
+            coverage_supported_positive=coverage_supported_positive,
+            coverage_unseen_sku=coverage_unseen_sku,
+            coverage_unseen_pair=coverage_unseen_pair,
+            coverage_no_positive_history=coverage_no_positive_history,
+            coverage_zero_sales=coverage_zero_sales,
             seasonal_naive_mae=seasonal_mae,
             last_observed_mae=last_mae,
-            model_vs_seasonal_mae=model_vs_seasonal_mae,
-            model_vs_last_mae=model_vs_last_mae,
+            matched_seasonal_n=matched_seasonal_n,
+            matched_model_mae_vs_seasonal=matched_model_mae_vs_seasonal,
+            matched_seasonal_mae=matched_seasonal_mae,
+            matched_model_minus_seasonal_mae=matched_model_minus_seasonal_mae,
+            matched_last_n=matched_last_n,
+            matched_model_mae_vs_last=matched_model_mae_vs_last,
+            matched_last_mae=matched_last_mae,
+            matched_model_minus_last_mae=matched_model_minus_last_mae,
         ))
     
     # Aggregate metrics
     valid_folds = [f for f in folds if not np.isnan(f.mae_packs)]
+    
+    # Coverage breakdown aggregates
+    mean_coverage_supported_positive = np.mean([f.coverage_supported_positive for f in valid_folds]) if valid_folds else np.nan
+    mean_coverage_unseen_sku = np.mean([f.coverage_unseen_sku for f in valid_folds]) if valid_folds else np.nan
+    mean_coverage_unseen_pair = np.mean([f.coverage_unseen_pair for f in valid_folds]) if valid_folds else np.nan
+    mean_coverage_no_positive_history = np.mean([f.coverage_no_positive_history for f in valid_folds]) if valid_folds else np.nan
+    mean_coverage_zero_sales = np.mean([f.coverage_zero_sales for f in valid_folds]) if valid_folds else np.nan
+    
+    # Matched-row aggregates (seasonal)
+    seasonal_folds = [f for f in valid_folds if not np.isnan(f.matched_model_minus_seasonal_mae)]
+    mean_matched_seasonal_n = np.mean([f.matched_seasonal_n for f in seasonal_folds]) if seasonal_folds else np.nan
+    mean_matched_model_mae_vs_seasonal = np.nanmean([f.matched_model_mae_vs_seasonal for f in seasonal_folds]) if seasonal_folds else np.nan
+    mean_matched_seasonal_mae = np.nanmean([f.matched_seasonal_mae for f in seasonal_folds]) if seasonal_folds else np.nan
+    mean_matched_model_minus_seasonal_mae = np.nanmean([f.matched_model_minus_seasonal_mae for f in seasonal_folds]) if seasonal_folds else np.nan
+    
+    # Matched-row aggregates (last observed)
+    last_folds = [f for f in valid_folds if not np.isnan(f.matched_model_minus_last_mae)]
+    mean_matched_last_n = np.mean([f.matched_last_n for f in last_folds]) if last_folds else np.nan
+    mean_matched_model_mae_vs_last = np.nanmean([f.matched_model_mae_vs_last for f in last_folds]) if last_folds else np.nan
+    mean_matched_last_mae = np.nanmean([f.matched_last_mae for f in last_folds]) if last_folds else np.nan
+    mean_matched_model_minus_last_mae = np.nanmean([f.matched_model_minus_last_mae for f in last_folds]) if last_folds else np.nan
     
     result = EvaluationResult(
         folds=folds,
@@ -362,10 +492,21 @@ def evaluate_rolling(
         mean_wapec=np.nanmean([f.wapec for f in valid_folds]) if valid_folds else np.nan,
         mean_pred_coverage=np.mean([f.pred_coverage for f in valid_folds]) if valid_folds else np.nan,
         mean_coverage_in_range=np.mean([f.coverage_in_range for f in valid_folds]) if valid_folds else np.nan,
+        mean_coverage_supported_positive=mean_coverage_supported_positive,
+        mean_coverage_unseen_sku=mean_coverage_unseen_sku,
+        mean_coverage_unseen_pair=mean_coverage_unseen_pair,
+        mean_coverage_no_positive_history=mean_coverage_no_positive_history,
+        mean_coverage_zero_sales=mean_coverage_zero_sales,
         mean_seasonal_naive_mae=np.nanmean([f.seasonal_naive_mae for f in valid_folds]) if valid_folds else np.nan,
         mean_last_observed_mae=np.nanmean([f.last_observed_mae for f in valid_folds]) if valid_folds else np.nan,
-        mean_model_vs_seasonal_mae=np.nanmean([f.model_vs_seasonal_mae for f in valid_folds]) if valid_folds else np.nan,
-        mean_model_vs_last_mae=np.nanmean([f.model_vs_last_mae for f in valid_folds]) if valid_folds else np.nan,
+        mean_matched_seasonal_n=mean_matched_seasonal_n,
+        mean_matched_model_mae_vs_seasonal=mean_matched_model_mae_vs_seasonal,
+        mean_matched_seasonal_mae=mean_matched_seasonal_mae,
+        mean_matched_model_minus_seasonal_mae=mean_matched_model_minus_seasonal_mae,
+        mean_matched_last_n=mean_matched_last_n,
+        mean_matched_model_mae_vs_last=mean_matched_model_mae_vs_last,
+        mean_matched_last_mae=mean_matched_last_mae,
+        mean_matched_model_minus_last_mae=mean_matched_model_minus_last_mae,
     )
     
     # Prior sensitivity analysis
@@ -438,10 +579,24 @@ def evaluation_to_dataframe(result: EvaluationResult) -> dict[str, pd.DataFrame]
             "wapec": f.wapec,
             "pred_coverage": f.pred_coverage,
             "coverage_in_range": f.coverage_in_range,
+            # Coverage breakdown
+            "coverage_supported_positive": f.coverage_supported_positive,
+            "coverage_unseen_sku": f.coverage_unseen_sku,
+            "coverage_unseen_pair": f.coverage_unseen_pair,
+            "coverage_no_positive_history": f.coverage_no_positive_history,
+            "coverage_zero_sales": f.coverage_zero_sales,
             "seasonal_naive_mae": f.seasonal_naive_mae,
             "last_observed_mae": f.last_observed_mae,
-            "model_vs_seasonal_mae": f.model_vs_seasonal_mae,
-            "model_vs_last_mae": f.model_vs_last_mae,
+            # Matched-row (seasonal)
+            "matched_seasonal_n": f.matched_seasonal_n,
+            "matched_model_mae_vs_seasonal": f.matched_model_mae_vs_seasonal,
+            "matched_seasonal_mae": f.matched_seasonal_mae,
+            "matched_model_minus_seasonal_mae": f.matched_model_minus_seasonal_mae,
+            # Matched-row (last observed)
+            "matched_last_n": f.matched_last_n,
+            "matched_model_mae_vs_last": f.matched_model_mae_vs_last,
+            "matched_last_mae": f.matched_last_mae,
+            "matched_model_minus_last_mae": f.matched_model_minus_last_mae,
         })
     fold_df = pd.DataFrame(fold_data)
     
@@ -486,7 +641,7 @@ def evaluation_to_dataframe(result: EvaluationResult) -> dict[str, pd.DataFrame]
 def print_evaluation_summary(result: EvaluationResult) -> None:
     """Print human-readable evaluation summary."""
     print("\n" + "="*60)
-    print("OUT-OF-TIME EVALUATION SUMMARY")
+    print("OUT-OF-TIME EVALUATION SUMMARY (RETROSPECTIVE)")
     print("="*60)
     print(f"Data hash: {result.data_hash}")
     print(f"Folds evaluated: {len(result.folds)}")
@@ -499,10 +654,31 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
         print(f"    WAPE: {f.wapec:.4f}" if not np.isnan(f.wapec) else "    WAPE: N/A")
         print(f"    Prediction coverage: {f.pred_coverage:.2%}")
         print(f"    Coverage in historical range: {f.coverage_in_range:.2%}")
-        print(f"    Seasonal naive MAE: {f.seasonal_naive_mae:.2f}" if not np.isnan(f.seasonal_naive_mae) else "    Seasonal naive MAE: N/A")
-        print(f"    Last observed MAE: {f.last_observed_mae:.2f}" if not np.isnan(f.last_observed_mae) else "    Last observed MAE: N/A")
-        print(f"    Model vs Seasonal (matched rows): {f.model_vs_seasonal_mae:.2f}" if not np.isnan(f.model_vs_seasonal_mae) else "    Model vs Seasonal (matched rows): N/A")
-        print(f"    Model vs Last (matched rows): {f.model_vs_last_mae:.2f}" if not np.isnan(f.model_vs_last_mae) else "    Model vs Last (matched rows): N/A")
+        # Coverage breakdown
+        print(f"    Coverage breakdown:")
+        print(f"      Supported positive: {f.coverage_supported_positive:.2%}")
+        print(f"      Unseen SKU: {f.coverage_unseen_sku:.2%}")
+        print(f"      Unseen SKU-Retailer pair: {f.coverage_unseen_pair:.2%}")
+        print(f"      No positive training history: {f.coverage_no_positive_history:.2%}")
+        print(f"      Zero sales: {f.coverage_zero_sales:.2%}")
+        print(f"    Seasonal naive MAE (standalone): {f.seasonal_naive_mae:.2f}" if not np.isnan(f.seasonal_naive_mae) else "    Seasonal naive MAE (standalone): N/A")
+        print(f"    Last observed MAE (standalone): {f.last_observed_mae:.2f}" if not np.isnan(f.last_observed_mae) else "    Last observed MAE (standalone): N/A")
+        # Matched-row (seasonal)
+        if not np.isnan(f.matched_model_minus_seasonal_mae):
+            print(f"    Matched rows (seasonal): n={f.matched_seasonal_n}")
+            print(f"      Model MAE: {f.matched_model_mae_vs_seasonal:.2f}")
+            print(f"      Seasonal MAE: {f.matched_seasonal_mae:.2f}")
+            print(f"      Model - Seasonal MAE (disagreement): {f.matched_model_minus_seasonal_mae:+.2f}")
+        else:
+            print(f"    Matched rows (seasonal): N/A (no overlapping finite rows)")
+        # Matched-row (last observed)
+        if not np.isnan(f.matched_model_minus_last_mae):
+            print(f"    Matched rows (last): n={f.matched_last_n}")
+            print(f"      Model MAE: {f.matched_model_mae_vs_last:.2f}")
+            print(f"      Last MAE: {f.matched_last_mae:.2f}")
+            print(f"      Model - Last MAE (disagreement): {f.matched_model_minus_last_mae:+.2f}")
+        else:
+            print(f"    Matched rows (last): N/A (no overlapping finite rows)")
     
     print()
     print("Aggregate metrics:")
@@ -510,10 +686,22 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
     print(f"  Mean WAPE: {result.mean_wapec:.4f}" if not np.isnan(result.mean_wapec) else "  Mean WAPE: N/A")
     print(f"  Mean prediction coverage: {result.mean_pred_coverage:.2%}")
     print(f"  Mean coverage in range: {result.mean_coverage_in_range:.2%}")
-    print(f"  Mean seasonal naive MAE: {result.mean_seasonal_naive_mae:.2f}" if not np.isnan(result.mean_seasonal_naive_mae) else "  Mean seasonal naive MAE: N/A")
-    print(f"  Mean last observed MAE: {result.mean_last_observed_mae:.2f}" if not np.isnan(result.mean_last_observed_mae) else "  Mean last observed MAE: N/A")
-    print(f"  Mean Model vs Seasonal (matched): {result.mean_model_vs_seasonal_mae:.2f}" if not np.isnan(result.mean_model_vs_seasonal_mae) else "  Mean Model vs Seasonal (matched): N/A")
-    print(f"  Mean Model vs Last (matched): {result.mean_model_vs_last_mae:.2f}" if not np.isnan(result.mean_model_vs_last_mae) else "  Mean Model vs Last (matched): N/A")
+    print(f"  Mean coverage breakdown:")
+    print(f"    Supported positive: {result.mean_coverage_supported_positive:.2%}" if not np.isnan(result.mean_coverage_supported_positive) else "    Supported positive: N/A")
+    print(f"    Unseen SKU: {result.mean_coverage_unseen_sku:.2%}" if not np.isnan(result.mean_coverage_unseen_sku) else "    Unseen SKU: N/A")
+    print(f"    Unseen SKU-Retailer pair: {result.mean_coverage_unseen_pair:.2%}" if not np.isnan(result.mean_coverage_unseen_pair) else "    Unseen SKU-Retailer pair: N/A")
+    print(f"    No positive training history: {result.mean_coverage_no_positive_history:.2%}" if not np.isnan(result.mean_coverage_no_positive_history) else "    No positive training history: N/A")
+    print(f"    Zero sales: {result.mean_coverage_zero_sales:.2%}" if not np.isnan(result.mean_coverage_zero_sales) else "    Zero sales: N/A")
+    print(f"  Mean seasonal naive MAE (standalone): {result.mean_seasonal_naive_mae:.2f}" if not np.isnan(result.mean_seasonal_naive_mae) else "  Mean seasonal naive MAE (standalone): N/A")
+    print(f"  Mean last observed MAE (standalone): {result.mean_last_observed_mae:.2f}" if not np.isnan(result.mean_last_observed_mae) else "  Mean last observed MAE (standalone): N/A")
+    print(f"  Mean matched n (seasonal): {result.mean_matched_seasonal_n:.1f}" if not np.isnan(result.mean_matched_seasonal_n) else "  Mean matched n (seasonal): N/A")
+    print(f"  Mean Model MAE on matched (seasonal): {result.mean_matched_model_mae_vs_seasonal:.2f}" if not np.isnan(result.mean_matched_model_mae_vs_seasonal) else "  Mean Model MAE on matched (seasonal): N/A")
+    print(f"  Mean Seasonal MAE on matched: {result.mean_matched_seasonal_mae:.2f}" if not np.isnan(result.mean_matched_seasonal_mae) else "  Mean Seasonal MAE on matched: N/A")
+    print(f"  Mean Model - Seasonal MAE (disagreement): {result.mean_matched_model_minus_seasonal_mae:+.2f}" if not np.isnan(result.mean_matched_model_minus_seasonal_mae) else "  Mean Model - Seasonal MAE (disagreement): N/A")
+    print(f"  Mean matched n (last): {result.mean_matched_last_n:.1f}" if not np.isnan(result.mean_matched_last_n) else "  Mean matched n (last): N/A")
+    print(f"  Mean Model MAE on matched (last): {result.mean_matched_model_mae_vs_last:.2f}" if not np.isnan(result.mean_matched_model_mae_vs_last) else "  Mean Model MAE on matched (last): N/A")
+    print(f"  Mean Last MAE on matched: {result.mean_matched_last_mae:.2f}" if not np.isnan(result.mean_matched_last_mae) else "  Mean Last MAE on matched: N/A")
+    print(f"  Mean Model - Last MAE (disagreement): {result.mean_matched_model_minus_last_mae:+.2f}" if not np.isnan(result.mean_matched_model_minus_last_mae) else "  Mean Model - Last MAE (disagreement): N/A")
     
     if result.prior_sensitivity:
         print()
@@ -525,7 +713,12 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
                 print(f"  {key}: FAILED - {val.get('message', 'unknown')}")
     
     print()
-    print("NOTE: Predictive validation does not prove causal elasticity.")
+    print("NOTE: This is a RETROSPECTIVE conditional evaluation using observed test-period prices.")
+    print("      It does not measure genuine prospective forecast skill.")
+    print("      Predictive validation does not prove causal elasticity.")
     print("      Price identification, omitted variable bias, and endogenous pricing")
     print("      may invalidate causal interpretation of these metrics.")
+    print("      Matched-row metrics: n = rows where actual, model, AND comparator are all finite.")
+    print("      Model - Comparator MAE measures disagreement, not which is more accurate.")
+    print("      exp(mu) is a conditional median, not a mean.")
     print("="*60)

@@ -59,6 +59,8 @@ def main() -> None:
     reset_key = f"reset_{signature}"
     st.session_state.setdefault(reset_key, 0)
     
+    baseline_period = int(baseline["Period"].max())
+    
     # Preset selector for quick scenarios
     st.subheader("Quick scenario")
     preset_options = {
@@ -72,6 +74,7 @@ def main() -> None:
         format_func=lambda k: preset_options[k],
         index=0,
     )
+    st.caption(f"📅 Baseline period: {baseline_period}")
     
     # Show preset details
     if preset == "nexus_cola_20pct":
@@ -166,22 +169,26 @@ def main() -> None:
     data_hash = signature
     
     # Get cached scenario bundle (simulation + support + decompositions)
-    with st.spinner("Computing scenario…"):
-        bundle = get_cached_scenario_bundle(
-            baseline=baseline,
-            fitted_estimates=fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"],
-            price_changes=changes,
-            data=data,
-            data_hash=data_hash,
-            config_hash=config_hash,
-        )
-    
-    scenario = bundle.scenario
-    support = bundle.support
-    market_decomp = bundle.market_decomp
-    category_decomp = bundle.category_decomp
-    retailer_decomp = bundle.retailer_decomp
-    brand_decomp = bundle.brand_decomp
+    try:
+        with st.spinner("Computing scenario…"):
+            bundle = get_cached_scenario_bundle(
+                baseline=baseline,
+                fitted_estimates=fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"],
+                price_changes=changes,
+                data=data,
+                data_hash=data_hash,
+                config_hash=config_hash,
+            )
+        
+        scenario = bundle.scenario
+        support = bundle.support
+        market_decomp = bundle.market_decomp
+        category_decomp = bundle.category_decomp
+        retailer_decomp = bundle.retailer_decomp
+        brand_decomp = bundle.brand_decomp
+    except Exception as e:
+        st.error(f"Scenario computation failed: {e}")
+        st.stop()
     
     r0 = float(scenario["Baseline_Revenue"].sum())
     r1 = float(scenario["Simulated_Revenue"].sum())
@@ -386,7 +393,8 @@ def main() -> None:
     with alt_col3:
         st.markdown("**Alternative C: Custom**")
         # Let user define a third alternative
-        if st.checkbox("Enable Alternative C", key="enable_alt_c"):
+        enable_alt_c = st.checkbox("Enable Alternative C", key="enable_alt_c")
+        if enable_alt_c:
             # Simple multiplier input
             mult = st.number_input("Price multiplier for all edited cells", 0.5, 2.0, 1.0, 0.05, key="alt_c_mult")
             alt_c_changes = {k: v * mult for k, v in changes.items()}
@@ -397,8 +405,9 @@ def main() -> None:
     alternatives = {
         "Hold": alt_a_changes,
         "Current edit": alt_b_changes,
-        "Custom": alt_c_changes,
     }
+    if enable_alt_c:
+        alternatives["Custom"] = alt_c_changes
     
     alt_scenarios = {}
     alt_results = {}
@@ -450,8 +459,29 @@ def main() -> None:
     # Price sweep for target cell
     if changes:
         st.subheader("Target cell price sweep")
-        # Get the first edited cell as target
-        target_cell = list(changes.keys())[0]
+        # Use the same cell selector as the detailed view for consistency
+        # Build selectable list of edited cells
+        sweep_cell_options = {}
+        for _, row in edited_detail.iterrows():
+            key = (row["Category"], row["Retailer"], row["Brand"], row["SKU"])
+            label = f"{row['Category']} | {row['Retailer']} | {row['Brand']} | {row['SKU']}"
+            sweep_cell_options[key] = label
+        
+        # Default to first edited cell, but allow user to select any
+        sweep_default_idx = 0
+        # Try to match the previously selected cell from detailed view
+        if 'selected_key' in locals() and selected_key in sweep_cell_options:
+            sweep_default_idx = list(sweep_cell_options.keys()).index(selected_key)
+        
+        sweep_target_key = st.selectbox(
+            "Select target cell for price sweep",
+            options=list(sweep_cell_options.keys()),
+            format_func=lambda k: sweep_cell_options[k],
+            index=sweep_default_idx,
+            key="sweep_target_cell",
+        )
+        
+        target_cell = sweep_target_key
         target_row = edited_detail[
             (edited_detail["Category"] == target_cell[0]) &
             (edited_detail["Retailer"] == target_cell[1]) &
@@ -464,20 +494,26 @@ def main() -> None:
         support_status = target_row["Support_Status"]
         hist_min = target_row.get("Historical_Min_Price", np.nan)
         hist_max = target_row.get("Historical_Max_Price", np.nan)
+        zero_anchor = target_row.get("Zero_Anchor", False)
         
         # Default sweep range to historical range when available, otherwise baseline ±50%
+        # Ensure min < max by clamping defaults
         default_min = max(0.01, hist_min if not np.isnan(hist_min) else baseline_price * 0.5)
         default_max = min(baseline_price * 2, hist_max if not np.isnan(hist_max) else baseline_price * 1.5)
+        if default_min >= default_max:
+            default_min = 0.01
+            default_max = baseline_price * 2
         
-        # Sweep range
-        sweep_min = st.number_input("Sweep min price", 0.01, baseline_price * 2, default_min, 0.01, key="sweep_min")
-        sweep_max = st.number_input("Sweep max price", sweep_min, baseline_price * 2, default_max, 0.01, key="sweep_max")
-        n_points = st.slider("Number of points", 5, 50, 20, key="sweep_points")
+        # Sweep range - use dynamic keys based on target cell to reset when target changes
+        cell_key_str = f"{target_cell[0]}_{target_cell[1]}_{target_cell[2]}_{target_cell[3]}"
+        sweep_min = st.number_input("Sweep min price", 0.01, baseline_price * 2, default_min, 0.01, key=f"sweep_min_{cell_key_str}")
+        sweep_max = st.number_input("Sweep max price", sweep_min, baseline_price * 2, default_max, 0.01, key=f"sweep_max_{cell_key_str}")
+        n_points = st.slider("Number of points", 5, 50, 20, key=f"sweep_points_{cell_key_str}")
         
         # Show support status for sweep bounds
         if not np.isnan(hist_min) and not np.isnan(hist_max):
             st.caption(f"Historical price range: {hist_min:.2f} – {hist_max:.2f}")
-        elif target_row["Zero_Anchor"]:
+        elif zero_anchor:
             st.caption("⚠️ Zero anchor — no historical price data; sweep bounds default to ±50% of baseline")
         else:
             st.caption("ℹ️ No historical positive-sales data; sweep bounds default to ±50% of baseline")
@@ -491,32 +527,44 @@ def main() -> None:
         
         for p in sweep_prices:
             sweep_changes = {target_cell: float(p)}
-            sweep_scenario = simulate_scenario(baseline, fitted["estimates"], sweep_changes)
-            
-            r1 = float(sweep_scenario["Simulated_Revenue"].sum())
-            q1 = float(sweep_scenario["Simulated_Unit_Sales"].sum())
-            rev_change = r1 - r0
-            pct_change = 100 * (r1 / r0 - 1) if r0 > 0 else 0
-            
-            # Mark extrapolation
-            extrapolated = False
-            extrap_reason = ""
-            if not np.isnan(hist_min) and (p < hist_min or p > hist_max):
-                extrapolated = True
-                if p < hist_min:
-                    extrap_reason = f"Below historical min ({hist_min:.2f})"
-                else:
-                    extrap_reason = f"Above historical max ({hist_max:.2f})"
-            
-            sweep_results.append({
-                "price": p,
-                "revenue": r1,
-                "revenue_change": rev_change,
-                "revenue_change_pct": pct_change,
-                "packs": q1,
-                "extrapolated": extrapolated,
-                "extrapolation_reason": extrap_reason,
-            })
+            try:
+                sweep_scenario = simulate_scenario(baseline, fitted["estimates"], sweep_changes)
+                
+                r1 = float(sweep_scenario["Simulated_Revenue"].sum())
+                q1 = float(sweep_scenario["Simulated_Unit_Sales"].sum())
+                rev_change = r1 - r0
+                pct_change = 100 * (r1 / r0 - 1) if r0 > 0 else 0
+                
+                # Mark extrapolation
+                extrapolated = False
+                extrap_reason = ""
+                if not np.isnan(hist_min) and (p < hist_min or p > hist_max):
+                    extrapolated = True
+                    if p < hist_min:
+                        extrap_reason = f"Below historical min ({hist_min:.2f})"
+                    else:
+                        extrap_reason = f"Above historical max ({hist_max:.2f})"
+                
+                sweep_results.append({
+                    "price": p,
+                    "revenue": r1,
+                    "revenue_change": rev_change,
+                    "revenue_change_pct": pct_change,
+                    "packs": q1,
+                    "extrapolated": extrapolated,
+                    "extrapolation_reason": extrap_reason,
+                })
+            except Exception as e:
+                # Skip invalid sweep points but log the error
+                sweep_results.append({
+                    "price": p,
+                    "revenue": np.nan,
+                    "revenue_change": np.nan,
+                    "revenue_change_pct": np.nan,
+                    "packs": np.nan,
+                    "extrapolated": True,
+                    "extrapolation_reason": f"Error: {str(e)}",
+                })
         
         sweep_df = pd.DataFrame(sweep_results)
         

@@ -88,6 +88,10 @@ def _write_artifacts(run_dir: Path, scenario: pd.DataFrame, estimates: pd.DataFr
         # Update settings with posterior note
         settings["posterior_summary.csv"] = "elasticity-posterior scenario summary; not a future-sales predictive interval"
         settings_path.write_text(json.dumps(settings, indent=2))
+        # mcmc_diagnostics.json is written separately in main() before this call
+        diag_path = run_dir / "mcmc_diagnostics.json"
+        if diag_path.exists():
+            artifacts.append("mcmc_diagnostics.json")
     
     return artifacts
 
@@ -214,7 +218,7 @@ def _run_evaluation_mode(args, data: pd.DataFrame, config: ModelConfig) -> None:
         "data_hash": settings["data_hash"],
         "model_version": MODEL_VERSION,
         "mode": "evaluation",
-        "artifacts": sorted(p.name for p in run_dir.iterdir() if p.is_file() and p.name != "evaluation_settings.json"),
+        "artifacts": sorted(p.name for p in run_dir.iterdir() if p.is_file()),
     }
     (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
     
@@ -223,7 +227,8 @@ def _run_evaluation_mode(args, data: pd.DataFrame, config: ModelConfig) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Retail price simulation")
-    parser.add_argument("--scenario", choices=["nexus_cola_20pct", "custom"], default="nexus_cola_20pct")
+    parser.add_argument("--scenario", choices=["nexus_cola_20pct", "custom"], default="nexus_cola_20pct",
+                        help="Scenario to run. 'custom' with no --changes means hold (no price changes).")
     parser.add_argument("--changes", type=Path, help="Load price changes from exported JSON/CSV file")
     parser.add_argument("--sample", action="store_true", help="Run MCMC posterior analysis")
     parser.add_argument("--prior-elasticity", type=float, default=-1.5)

@@ -25,7 +25,16 @@ python sim.py --scenario nexus_cola_20pct
 python sim.py --scenario nexus_cola_20pct --sample
 ```
 
-The dashboard caches data loading and MAP fitting. Price edits do not refit the model. The CLI `--sample` option runs MCMC and exports an elasticity-posterior scenario summary.
+The dashboard caches data loading and MAP fitting. Price edits do not refit the model. The CLI `--sample` option runs MCMC and exports an elasticity-posterior scenario summary (not a future-sales predictive interval).
+
+### Outputs
+CLI runs write artifacts to `outputs/runs/<timestamp>/`:
+- `scenario_detail.csv` — cell-level baseline/simulated prices, quantities, revenue
+- `elasticity_estimates.csv` — MAP elasticity per SKU with support diagnostics
+- `market_decomposition.csv` — Volume → Mix → Price attribution at market level
+- `model_settings.json` — model config, inference method (MAP or posterior), baseline period, price changes
+- `run_manifest.json` — run ID, data hash, model version, artifact list
+- With `--sample`: `posterior_summary.csv` and `mcmc_diagnostics.json` (MCMC convergence metrics)
 
 ## What is implemented
 
