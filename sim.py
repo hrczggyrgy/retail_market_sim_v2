@@ -197,6 +197,10 @@ def _run_evaluation_mode(args, data: pd.DataFrame, config: ModelConfig) -> None:
     if not dfs["prior_sensitivity"].empty:
         dfs["prior_sensitivity"].to_csv(run_dir / "evaluation_prior_sensitivity.csv", index=False)
     
+    # Write aggregate metrics
+    if "aggregate" in dfs and not dfs["aggregate"].empty:
+        dfs["aggregate"].to_csv(run_dir / "evaluation_aggregate.csv", index=False)
+    
     # Settings
     generated_at = datetime.now(timezone.utc).isoformat()
     settings = {

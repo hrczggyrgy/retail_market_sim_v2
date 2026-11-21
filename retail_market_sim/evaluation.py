@@ -67,6 +67,7 @@ class EvaluationResult:
     mean_wapec: float
     mean_pred_coverage: float
     mean_coverage_in_range: float
+    overall_row_coverage: float
     # Coverage breakdown aggregates
     mean_coverage_supported_positive: float
     mean_coverage_unseen_sku: float
@@ -430,6 +431,9 @@ def evaluate_rolling(
         coverage_no_positive_history = (pred_merged["Coverage_Type"] == "no_positive_history").mean() if total_rows > 0 else 0.0
         coverage_zero_sales = (pred_merged["Coverage_Type"] == "zero_sales").mean() if total_rows > 0 else 0.0
         
+        # scored_rows = rows with finite model predictions (same mask used for MAE)
+        scored_rows = int(finite_pred.sum())
+        
         # Extract elasticities
         estimates_df = fitted["estimates"].data if hasattr(fitted["estimates"], "data") else fitted["estimates"]
         elasticities = estimates_df[PRODUCT_KEYS + ["Elasticity_MAP"]].copy()
@@ -441,7 +445,7 @@ def evaluate_rolling(
             test_rows=len(test_data),
             test_positive_rows=int((test_data["Unit_Sales"] > 0).sum()),
             attempted_rows=len(test_data),
-            scored_rows=int((pred_merged["Coverage_Type"] == "supported_positive").sum()),
+            scored_rows=scored_rows,
             elasticities=elasticities,
             predictions=pred_merged,
             mae_packs=mae,
@@ -467,6 +471,8 @@ def evaluate_rolling(
     
     # Aggregate metrics
     valid_folds = [f for f in folds if not np.isnan(f.mae_packs)]
+    # For coverage and pred_coverage, use all folds with attempted rows
+    attempted_folds = [f for f in folds if f.attempted_rows > 0]
     # For coverage breakdown, use all folds (including zero-scoreable)
     all_folds = folds if folds else []
     
@@ -476,6 +482,13 @@ def evaluate_rolling(
     mean_coverage_unseen_pair = np.mean([f.coverage_unseen_pair for f in all_folds]) if all_folds else np.nan
     mean_coverage_no_positive_history = np.mean([f.coverage_no_positive_history for f in all_folds]) if all_folds else np.nan
     mean_coverage_zero_sales = np.mean([f.coverage_zero_sales for f in all_folds]) if all_folds else np.nan
+    
+    # Mean prediction coverage over all folds with attempted rows
+    mean_pred_coverage = np.mean([f.pred_coverage for f in attempted_folds]) if attempted_folds else np.nan
+    # Overall row coverage: total scored rows / total attempted rows across all folds
+    total_scored = sum(f.scored_rows for f in folds)
+    total_attempted = sum(f.attempted_rows for f in folds)
+    overall_row_coverage = total_scored / total_attempted if total_attempted > 0 else np.nan
     
     # Matched-row aggregates (seasonal) - only folds with matched rows
     seasonal_folds = [f for f in valid_folds if not np.isnan(f.matched_model_minus_seasonal_mae)]
@@ -497,8 +510,9 @@ def evaluate_rolling(
         config=config,
         mean_mae_packs=np.mean([f.mae_packs for f in valid_folds]) if valid_folds else np.nan,
         mean_wapec=np.nanmean([f.wapec for f in valid_folds]) if valid_folds else np.nan,
-        mean_pred_coverage=np.mean([f.pred_coverage for f in valid_folds]) if valid_folds else np.nan,
+        mean_pred_coverage=mean_pred_coverage,
         mean_coverage_in_range=np.mean([f.coverage_in_range for f in valid_folds]) if valid_folds else np.nan,
+        overall_row_coverage=overall_row_coverage,
         mean_coverage_supported_positive=mean_coverage_supported_positive,
         mean_coverage_unseen_sku=mean_coverage_unseen_sku,
         mean_coverage_unseen_pair=mean_coverage_unseen_pair,
@@ -644,6 +658,15 @@ def evaluation_to_dataframe(result: EvaluationResult) -> dict[str, pd.DataFrame]
         "predictions": pred_df,
         "elasticities": elast_df,
         "prior_sensitivity": prior_df,
+        "aggregate": pd.DataFrame([{
+            "overall_row_coverage": result.overall_row_coverage,
+            "mean_pred_coverage": result.mean_pred_coverage,
+            "mean_coverage_supported_positive": result.mean_coverage_supported_positive,
+            "mean_coverage_unseen_sku": result.mean_coverage_unseen_sku,
+            "mean_coverage_unseen_pair": result.mean_coverage_unseen_pair,
+            "mean_coverage_no_positive_history": result.mean_coverage_no_positive_history,
+            "mean_coverage_zero_sales": result.mean_coverage_zero_sales,
+        }]),
     }
 
 
@@ -694,7 +717,8 @@ def print_evaluation_summary(result: EvaluationResult) -> None:
     print("Aggregate metrics:")
     print(f"  Mean MAE (packs): {result.mean_mae_packs:.2f}" if not np.isnan(result.mean_mae_packs) else "  Mean MAE (packs): N/A")
     print(f"  Mean WAPE: {result.mean_wapec:.4f}" if not np.isnan(result.mean_wapec) else "  Mean WAPE: N/A")
-    print(f"  Mean prediction coverage: {result.mean_pred_coverage:.2%}")
+    print(f"  Mean prediction coverage (per-fold avg): {result.mean_pred_coverage:.2%}")
+    print(f"  Overall row coverage (total scored/total attempted): {result.overall_row_coverage:.2%}")
     print(f"  Mean coverage in range: {result.mean_coverage_in_range:.2%}")
     print(f"  Mean coverage breakdown:")
     print(f"    Supported positive: {result.mean_coverage_supported_positive:.2%}" if not np.isnan(result.mean_coverage_supported_positive) else "    Supported positive: N/A")

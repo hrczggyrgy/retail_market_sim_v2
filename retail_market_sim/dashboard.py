@@ -504,8 +504,8 @@ def main() -> None:
         zero_anchor = target_row.get("Zero_Anchor", False)
         
         # Default sweep range: historical range when available, else ±50% of baseline
-        # Lower bound: never below a small positive floor; upper bound: at least 2x baseline
-        floor = max(0.01, baseline_price * 0.01)  # at least 1% of baseline or 0.01
+        # Lower bound: small positive floor that includes baseline; upper bound: at least 2x baseline
+        floor = max(1e-6, baseline_price * 1e-4)  # allow baseline for sub-cent prices
         default_min = hist_min if not np.isnan(hist_min) else baseline_price * 0.5
         default_max = hist_max if not np.isnan(hist_max) else baseline_price * 1.5
         default_min = max(floor, default_min)
@@ -514,7 +514,9 @@ def main() -> None:
         # Sweep range - use dynamic keys based on target cell to reset when target changes
         cell_key_str = f"{target_cell[0]}_{target_cell[1]}_{target_cell[2]}_{target_cell[3]}"
         sweep_min = st.number_input("Sweep min price", floor, default_max * 2, default_min, 0.01, key=f"sweep_min_{cell_key_str}")
-        sweep_max = st.number_input("Sweep max price", sweep_min, default_max * 2, default_max, 0.01, key=f"sweep_max_{cell_key_str}")
+        # Clamp max default to be at least the current min (handles user raising min above old default max)
+        max_default = max(default_max, sweep_min * 1.01)
+        sweep_max = st.number_input("Sweep max price", sweep_min, max_default * 2, max_default, 0.01, key=f"sweep_max_{cell_key_str}")
         n_points = st.slider("Number of points", 5, 50, 20, key=f"sweep_points_{cell_key_str}")
         
         # Show support status for sweep bounds
