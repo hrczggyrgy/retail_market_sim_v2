@@ -70,8 +70,8 @@ def _generate_plain_language_explanation(
     explanation_parts.append(
         f"**Observed-market revenue** (all SKUs × retailers in this dataset) changes by "
         f"**{market_rev_change_pct:+.2f}%**. This is smaller than the target SKU change because "
-        f"the target is one cell within a larger market; other products retain their baseline packs, "
-        f"but their revenue shares shift as the market denominator changes."
+        f"the target is one cell within a larger market; other products' modeled packs and revenue are unchanged, "
+        f"so their revenue shares change only because the market denominator changes."
     )
     
     # Support status
@@ -114,8 +114,22 @@ def render_decision_summary(
         st.info("No price changes defined. Select a preset or edit prices to see a decision summary.")
         return
     
-    # Get the primary edited cell (first one if multiple)
-    target_key = list(changes.keys())[0]
+    # If multiple edited cells, let user select the primary one for the summary
+    edited_keys = list(changes.keys())
+    if len(edited_keys) > 1:
+        st.caption("Multiple cells edited — select the primary cell for the decision summary:")
+        cell_labels = {k: f"{k[3]} ({k[2]}) at {k[1]}" for k in edited_keys}
+        selected_key = st.selectbox(
+            "Primary edited cell",
+            options=edited_keys,
+            format_func=lambda k: cell_labels[k],
+            index=0,
+            key="decision_summary_target_cell",
+        )
+        target_key = selected_key
+    else:
+        target_key = edited_keys[0]
+    
     target_mask = np.ones(len(scenario), dtype=bool)
     for col, val in zip(CELL_KEYS, target_key):
         target_mask &= scenario[col].eq(val).to_numpy()
@@ -128,6 +142,10 @@ def render_decision_summary(
         (support["Brand"] == target_key[2]) &
         (support["SKU"] == target_key[3])
     ].iloc[0]
+    
+    # Use the target cell's actual prices for the summary
+    baseline_price = float(target_row["Baseline_Price"])
+    simulated_price = float(target_row["Simulated_Price"])
     
     elasticity = float(target_row["Elasticity_MAP"])
     support_status = target_support["Support_Status"]
@@ -229,10 +247,7 @@ def render_market_explanation(
     st.subheader("🔍 Why did market revenue change?")
     st.caption("This bridge breaks down the accounting components. Hover for definitions.")
     
-    # Get the market decomposition row
-    row = market_decomp.iloc[0]
-    
-    # Compute target cell contributions
+    # Compute target cell contributions for the PRIMARY edited cell
     target_key = list(changes.keys())[0]
     target_mask = np.ones(len(scenario), dtype=bool)
     for col, val in zip(CELL_KEYS, target_key):
@@ -244,22 +259,16 @@ def render_market_explanation(
     target_volume_effect = float(target_row["Volume_Effect"])
     target_rev_delta = float(target_row["Revenue_Delta"])
     
-    # Other cells' unchanged revenue
-    other_cells_revenue_baseline = r0 - float(target_row["Baseline_Revenue"])
-    other_cells_revenue_scenario = r1 - float(target_row["Simulated_Revenue"])
-    other_cells_change = other_cells_revenue_scenario - other_cells_revenue_baseline
+    # In this model, unedited cells retain baseline packs AND prices,
+    # so their modeled revenue change is exactly zero.
+    other_cells_change = 0.0
     
-    # Share denominator effect = market change - target change - other cells change
-    # Actually, other cells' packs are unchanged, so their revenue change comes from price effects
-    # but since their prices didn't change, their revenue change is zero
-    # The "share denominator effect" is the market revenue change not explained by target cell
-    
-    # Build waterfall data
+    # Build waterfall data - only the target cell contributes to modeled change
     waterfall_data = {
         "Baseline Market Revenue": r0,
         "Target Price Effect": target_price_effect,
         "Target Volume Effect": target_volume_effect,
-        "Other Cells' Revenue Change": other_cells_change,
+        "Other Cells: No Modeled Change (0)": other_cells_change,
         "Scenario Market Revenue": r1,
     }
     
@@ -280,8 +289,8 @@ def render_market_explanation(
     ))
     
     fig.update_layout(
-        title="Market Revenue: From Baseline to Scenario",
-        yaxis_title="Revenue",
+        title="Observed-Market Revenue: From Baseline to Scenario (dataset currency)",
+        yaxis_title="Revenue (dataset currency)",
         height=400,
         showlegend=False,
     )
@@ -299,18 +308,19 @@ def render_market_explanation(
         """)
     with col2:
         st.markdown(f"""
-        - **Other Cells' Revenue Change**: {other_cells_change:+,.2f} (revenue change from unedited cells)
+        - **Other Cells: No Modeled Change**: {other_cells_change:+,.2f} (unedited cells retain baseline packs and prices)
         - **Scenario Market Revenue**: {r1:,.2f} (new total)
         - **Net Market Change**: {r1 - r0:+,.2f} ({(r1/r0-1)*100:+.2f}%)
         """)
     
-    # Key insight
+    # Key insight - precise wording
     st.info(
-        f"💡 **Key insight:** The target SKU's revenue changed by {target_rev_delta:+,.2f} "
-        f"({target_rev_delta/float(target_row['Baseline_Revenue'])*100:+.1f}%), "
-        f"but the observed-market revenue only changed by {r1-r0:+,.2f} ({(r1/r0-1)*100:+.2f}%). "
-        f"This is because the target is one cell among many; other products' packs are unchanged "
-        f"in this model, so their revenue shares shift purely through the denominator effect."
+        f"💡 **Key insight:** The target SKU-retailer cell is the only cell with a modeled demand response. "
+        f"Its revenue changes by {target_rev_delta:+,.2f} "
+        f"({target_rev_delta/float(target_row['Baseline_Revenue'])*100:+.1f}%). "
+        f"All other cells retain their observed baseline packs and prices, so their modeled revenue is unchanged. "
+        f"The observed-market revenue changes by {r1-r0:+,.2f} ({(r1/r0-1)*100:+.2f}%) because it includes the target cell; "
+        f"revenue shares of other products change only because the market denominator changes."
     )
 
 
@@ -487,6 +497,7 @@ def render_target_cell_story(
 def render_market_share_explanation(
     scenario: pd.DataFrame,
     changes: dict,
+    target_key: tuple | None = None,
 ) -> None:
     """Render a compact 'Who gained or lost share?' panel."""
     if not changes:
@@ -495,19 +506,20 @@ def render_market_share_explanation(
     st.subheader("📊 Who gained or lost revenue share?")
     st.caption("Share changes reflect denominator effects. Unedited products keep their packs; their share falls if the target grows.")
     
-    # Get target cell
-    target_key = list(changes.keys())[0]
+    # Get target cell (use provided target_key or default to first edited cell)
+    if target_key is None:
+        target_key = list(changes.keys())[0]
     target_mask = np.ones(len(scenario), dtype=bool)
     for col, val in zip(CELL_KEYS, target_key):
         target_mask &= scenario[col].eq(val).to_numpy()
     target_row = scenario.loc[target_mask].iloc[0]
     
-    # Target SKU share change
+    # Target SKU share change (total market)
     target_baseline_share = float(target_row["Baseline_Revenue"]) / scenario["Baseline_Revenue"].sum() * 100
     target_scenario_share = float(target_row["Simulated_Revenue"]) / scenario["Simulated_Revenue"].sum() * 100
     target_share_change = target_scenario_share - target_baseline_share
     
-    # Brand-level shares
+    # Total-market brand-level shares
     brand_shares = scenario.groupby(["Category", "Brand"], as_index=False, observed=True).agg(
         Baseline_Revenue=("Baseline_Revenue", "sum"),
         Simulated_Revenue=("Simulated_Revenue", "sum"),
@@ -517,7 +529,7 @@ def render_market_share_explanation(
     brand_shares["Share_Change_pp"] = brand_shares["Simulated_Share_Pct"] - brand_shares["Baseline_Share_Pct"]
     brand_shares = brand_shares.sort_values("Share_Change_pp", ascending=False)
     
-    # Retailer-level shares
+    # Total-market retailer-level shares
     retailer_shares = scenario.groupby("Retailer", as_index=False, observed=True).agg(
         Baseline_Revenue=("Baseline_Revenue", "sum"),
         Simulated_Revenue=("Simulated_Revenue", "sum"),
@@ -531,7 +543,7 @@ def render_market_share_explanation(
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(
-            f"Target SKU Share ({target_key[3]})",
+            f"Target SKU Share ({target_key[3]}) — Total Market",
             f"{target_scenario_share:.2f}%",
             f"{target_share_change:+.2f} pp",
             delta_color="normal" if target_share_change >= 0 else "inverse"
@@ -541,11 +553,53 @@ def render_market_share_explanation(
     with col3:
         st.metric("Scenario Share", f"{target_scenario_share:.2f}%")
     
-    # Top gaining/losing brands
-    tab1, tab2 = st.tabs(["By Brand", "By Retailer"])
+    # Category selector for within-category shares
+    categories = sorted(scenario["Category"].unique())
+    selected_category = st.selectbox(
+        "Category for within-category shares",
+        categories,
+        index=categories.index(target_key[0]) if target_key[0] in categories else 0,
+        key="share_category_selector",
+    )
+    
+    # Within-category brand shares
+    cat_mask = scenario["Category"] == selected_category
+    cat_scenario = scenario[cat_mask]
+    if len(cat_scenario) > 0:
+        cat_brand_shares = cat_scenario.groupby(["Brand"], as_index=False, observed=True).agg(
+            Baseline_Revenue=("Baseline_Revenue", "sum"),
+            Simulated_Revenue=("Simulated_Revenue", "sum"),
+        )
+        cat_brand_shares["Baseline_Share_Pct"] = cat_brand_shares["Baseline_Revenue"] / cat_brand_shares["Baseline_Revenue"].sum() * 100
+        cat_brand_shares["Simulated_Share_Pct"] = cat_brand_shares["Simulated_Revenue"] / cat_brand_shares["Simulated_Revenue"].sum() * 100
+        cat_brand_shares["Share_Change_pp"] = cat_brand_shares["Simulated_Share_Pct"] - cat_brand_shares["Baseline_Share_Pct"]
+        cat_brand_shares = cat_brand_shares.sort_values("Share_Change_pp", ascending=False)
+    else:
+        cat_brand_shares = pd.DataFrame(columns=["Brand", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"])
+    
+    # Within-category retailer shares
+    cat_retailer_shares = cat_scenario.groupby("Retailer", as_index=False, observed=True).agg(
+        Baseline_Revenue=("Baseline_Revenue", "sum"),
+        Simulated_Revenue=("Simulated_Revenue", "sum"),
+    )
+    if len(cat_retailer_shares) > 0:
+        cat_retailer_shares["Baseline_Share_Pct"] = cat_retailer_shares["Baseline_Revenue"] / cat_retailer_shares["Baseline_Revenue"].sum() * 100
+        cat_retailer_shares["Simulated_Share_Pct"] = cat_retailer_shares["Simulated_Revenue"] / cat_retailer_shares["Simulated_Revenue"].sum() * 100
+        cat_retailer_shares["Share_Change_pp"] = cat_retailer_shares["Simulated_Share_Pct"] - cat_retailer_shares["Baseline_Share_Pct"]
+        cat_retailer_shares = cat_retailer_shares.sort_values("Share_Change_pp", ascending=False)
+    else:
+        cat_retailer_shares = pd.DataFrame(columns=["Retailer", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"])
+    
+    # Display tabs: Total Market Brand, Within-Category Brand, Total Market Retailer, Within-Category Retailer
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Total Market: By Brand", 
+        f"Within {selected_category}: By Brand",
+        "Total Market: By Retailer",
+        f"Within {selected_category}: By Retailer"
+    ])
     
     with tab1:
-        st.markdown("**Brand revenue share changes (percentage points)**")
+        st.markdown("**Total-market brand revenue share changes (percentage points)**")
         display_brands = brand_shares[["Category", "Brand", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"]].copy()
         display_brands.columns = ["Category", "Brand", "Baseline Share %", "Scenario Share %", "Change (pp)"]
         st.dataframe(
@@ -562,7 +616,27 @@ def render_market_share_explanation(
         )
     
     with tab2:
-        st.markdown("**Retailer revenue share changes (percentage points)**")
+        st.markdown(f"**Within-category ({selected_category}) brand revenue share changes (percentage points)**")
+        if len(cat_brand_shares) > 0:
+            display_cat_brands = cat_brand_shares[["Brand", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"]].copy()
+            display_cat_brands.columns = ["Brand", "Baseline Share %", "Scenario Share %", "Change (pp)"]
+            st.dataframe(
+                display_cat_brands.style.format({
+                    "Baseline Share %": "{:.2f}%",
+                    "Scenario Share %": "{:.2f}%",
+                    "Change (pp)": "{:+.2f} pp",
+                }).applymap(
+                    lambda x: "color: green" if isinstance(x, str) and x.startswith("+") else ("color: red" if isinstance(x, str) and x.startswith("-") else ""),
+                    subset=["Change (pp)"],
+                ),
+                hide_index=True,
+                use_container_width=True,
+            )
+        else:
+            st.info(f"No data for category {selected_category}")
+    
+    with tab3:
+        st.markdown("**Total-market retailer revenue share changes (percentage points)**")
         display_retailers = retailer_shares[["Retailer", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"]].copy()
         display_retailers.columns = ["Retailer", "Baseline Share %", "Scenario Share %", "Change (pp)"]
         st.dataframe(
@@ -578,11 +652,31 @@ def render_market_share_explanation(
             use_container_width=True,
         )
     
-    # Key note
+    with tab4:
+        st.markdown(f"**Within-category ({selected_category}) retailer revenue share changes (percentage points)**")
+        if len(cat_retailer_shares) > 0:
+            display_cat_retailers = cat_retailer_shares[["Retailer", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"]].copy()
+            display_cat_retailers.columns = ["Retailer", "Baseline Share %", "Scenario Share %", "Change (pp)"]
+            st.dataframe(
+                display_cat_retailers.style.format({
+                    "Baseline Share %": "{:.2f}%",
+                    "Scenario Share %": "{:.2f}%",
+                    "Change (pp)": "{:+.2f} pp",
+                }).applymap(
+                    lambda x: "color: green" if isinstance(x, str) and x.startswith("+") else ("color: red" if isinstance(x, str) and x.startswith("-") else ""),
+                    subset=["Change (pp)"],
+                ),
+                hide_index=True,
+                use_container_width=True,
+            )
+        else:
+            st.info(f"No data for category {selected_category}")
+    
+    # Key note - precise wording
     st.info(
-        "💡 **Important:** Share loss ≠ pack loss. In this model, unedited products keep their baseline packs. "
-        "Their revenue share falls because the target SKU's revenue grows, expanding the market denominator. "
-        "This is a **share shift**, not a **volume shift**."
+        "💡 **Important:** Share loss ≠ pack loss. In this model, unedited products keep their baseline packs and prices. "
+        "Their revenue shares change only because the market denominator changes. "
+        "This is a **share shift** (denominator effect), not a **volume shift**."
     )
 
 
@@ -597,6 +691,8 @@ def render_price_sweep_decision_chart(
     zero_anchor: bool,
     elasticity: float,
     current_price: float | None = None,
+    current_revenue: float | None = None,
+    current_packs: float | None = None,
 ) -> None:
     """Render an enhanced price sweep as a decision chart."""
     st.subheader("📈 Price Sweep: Decision Chart")
@@ -646,10 +742,8 @@ def render_price_sweep_decision_chart(
         hovertemplate="Baseline Price: %{x:.2f}<br>Baseline Revenue: %{y:,.2f}<extra></extra>",
     ))
     
-    # Current proposal marker
-    if current_price is not None:
-        # Find the revenue at current price (interpolate from sweep)
-        current_revenue = np.interp(current_price, sweep_df["price"], sweep_df["revenue"])
+    # Current proposal marker (use actual scenario values, not interpolation)
+    if current_price is not None and current_revenue is not None:
         fig_rev.add_trace(go.Scatter(
             x=[current_price],
             y=[current_revenue],
@@ -660,9 +754,9 @@ def render_price_sweep_decision_chart(
         ))
     
     fig_rev.update_layout(
-        title="Market Revenue vs Target Cell Price",
+        title="Observed-Market Revenue vs Target Cell Price (dataset currency)",
         xaxis_title="Target Cell Price",
-        yaxis_title="Market Revenue",
+        yaxis_title="Market Revenue (dataset currency)",
         height=400,
         hovermode="x unified",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
@@ -710,9 +804,8 @@ def render_price_sweep_decision_chart(
         hovertemplate="Baseline Price: %{x:.2f}<br>Baseline Packs: %{y:,.1f}<extra></extra>",
     ))
     
-    # Current proposal marker for packs
-    if current_price is not None:
-        current_packs = np.interp(current_price, sweep_df["price"], sweep_df["packs"])
+    # Current proposal marker for packs (use actual scenario values)
+    if current_price is not None and current_packs is not None:
         fig_packs.add_trace(go.Scatter(
             x=[current_price],
             y=[current_packs],
@@ -723,7 +816,7 @@ def render_price_sweep_decision_chart(
         ))
     
     fig_packs.update_layout(
-        title="Market Packs vs Target Cell Price",
+        title="Observed-Market Packs vs Target Cell Price",
         xaxis_title="Target Cell Price",
         yaxis_title="Market Packs",
         height=300,
@@ -733,32 +826,41 @@ def render_price_sweep_decision_chart(
     
     st.plotly_chart(fig_packs, use_container_width=True)
     
-    # Decision guidance
+    # Decision guidance - highest modeled revenue in displayed supported range
     if not zero_anchor and not np.isnan(hist_min) and not np.isnan(hist_max):
-        # Find optimal price in supported range
+        # Find highest revenue in supported range (using actual sweep points only)
         in_range = sweep_df[
             (sweep_df["price"] >= hist_min) & 
-            (sweep_df["price"] <= hist_max)
+            (sweep_df["price"] <= hist_max) &
+            (~sweep_df["extrapolated"])
         ]
-        if len(in_range) > 0:
+        if len(in_range) >= 2:  # Need at least 2 points for meaningful comparison
             max_rev_idx = in_range["revenue"].idxmax()
-            optimal_price = in_range.loc[max_rev_idx, "price"]
-            optimal_revenue = in_range.loc[max_rev_idx, "revenue"]
+            highest_price = in_range.loc[max_rev_idx, "price"]
+            highest_revenue = in_range.loc[max_rev_idx, "revenue"]
             st.success(
-                f"💡 **Within historical range:** Maximum market revenue of {optimal_revenue:,.2f} "
-                f"occurs at price {optimal_price:.2f} (elasticity β = {elasticity:.2f})."
+                f"💡 **Highest modeled market revenue within the displayed supported range:** "
+                f"{highest_revenue:,.2f} at price {highest_price:.2f} "
+                f"(sweep grid: {len(in_range)} points, elasticity β = {elasticity:.2f}). "
+                f"This is a model calculation on the selected sweep grid — "
+                f"not a commercial optimum. It excludes margin, stock, competitor response, "
+                f"substitution, and uncertainty."
+            )
+        elif len(in_range) == 1:
+            st.info(
+                f"ℹ️ Only one sweep point falls within the historical range "
+                f"(price {in_range.iloc[0]['price']:.2f}). "
+                f"Increase sweep granularity or widen range for meaningful comparison."
             )
     
-    if current_price is not None:
-        current_revenue = np.interp(current_price, sweep_df["price"], sweep_df["revenue"])
-        current_packs = np.interp(current_price, sweep_df["price"], sweep_df["packs"])
+    if current_price is not None and current_revenue is not None and current_packs is not None:
         revenue_change_pct = 100 * (current_revenue / r0 - 1) if r0 > 0 else 0
         packs_change_pct = 100 * (current_packs / q0 - 1) if q0 > 0 else 0
         price_change_pct = 100 * (current_price / baseline_price - 1)
         st.info(
             f"📍 **Current proposal:** Price = {current_price:.2f} ({price_change_pct:+.1f}%) → "
-            f"Market Revenue = {current_revenue:,.2f} ({revenue_change_pct:+.2f}%) → "
-            f"Market Packs = {current_packs:,.1f} ({packs_change_pct:+.1f}%)"
+            f"Observed-Market Revenue = {current_revenue:,.2f} ({revenue_change_pct:+.2f}%) → "
+            f"Observed-Market Packs = {current_packs:,.1f} ({packs_change_pct:+.1f}%)"
         )
     
     st.caption(
@@ -1033,6 +1135,7 @@ def main() -> None:
         render_market_share_explanation(
             scenario=scenario,
             changes=changes,
+            target_key=target_key,
         )
     else:
         # No changes - show simple KPIs
@@ -1254,8 +1357,17 @@ def main() -> None:
         
         sweep_df = pd.DataFrame(sweep_results)
         
-        # Current scenario price for marker
+        # Current scenario values for the target cell (use actual scenario, not interpolation)
         current_scenario_price = simulated_price
+        # Get the target cell's revenue and packs from the actual scenario
+        target_scenario_row = scenario[
+            (scenario["Category"] == target_cell[0]) &
+            (scenario["Retailer"] == target_cell[1]) &
+            (scenario["Brand"] == target_cell[2]) &
+            (scenario["SKU"] == target_cell[3])
+        ].iloc[0]
+        current_scenario_revenue = float(target_scenario_row["Simulated_Revenue"])
+        current_scenario_packs = float(target_scenario_row["Simulated_Unit_Sales"])
         
         # Render enhanced price sweep as decision chart
         render_price_sweep_decision_chart(
@@ -1269,6 +1381,8 @@ def main() -> None:
             zero_anchor=zero_anchor,
             elasticity=elasticity,
             current_price=current_scenario_price,
+            current_revenue=current_scenario_revenue,
+            current_packs=current_scenario_packs,
         )
     
     st.info("This comparison is based on fitted own-price associations (MAP point estimate). Substitution, promotional confounding, inventory constraints, competitor reactions, and supply constraints are excluded. Posterior uncertainty bands require --sample run.")
@@ -1286,7 +1400,10 @@ def main() -> None:
             measure=["absolute", "relative", "relative", "relative", "total"],
             y=[r0, row["Volume_Effect"], row["Mix_Effect"], row["Price_Effect"], 0],
         ))
-        fig.update_layout(title="Sequential Volume → Mix → Price attribution", yaxis_title="Revenue")
+        fig.update_layout(
+            title="Sequential Volume → Mix → Price attribution (Observed-Market, dataset currency)",
+            yaxis_title="Revenue (dataset currency)"
+        )
         st.plotly_chart(fig)
         baseline_period = int(baseline["Period"].max())
         st.caption(f"Accounting allocation, not separate causal mechanisms. Volume is based on numeric litres-per-pack in this beverage dataset. Baseline: Period {baseline_period}.")
