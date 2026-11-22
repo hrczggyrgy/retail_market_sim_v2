@@ -14,6 +14,13 @@ from .model import ModelConfig, fit_model_map
 from .simulation import build_named_scenario, simulate_scenario
 from .market import MarketConfig, simulate_market_scenario, aggregate_to_groups, get_gainers_losers, market_revenue_bridge
 from .dashboard_cache import get_cached_scenario_bundle, _hash_config
+from .analytics import (
+    enrich_with_derived, compute_all_aggregations, compute_all_shares,
+    compute_seasonal_profile, compute_seasonal_strength, compute_month_over_month,
+    compute_year_over_year, format_seasonal_profile, seasonal_insufficient_years_warning,
+    MONTH_NAMES, full_revenue_bridge, common_cell_revenue_decomposition,
+    three_factor_liter_decomposition,
+)
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "sample_data.csv"
 MODEL_VERSION = "retail-map-v2"
@@ -1427,6 +1434,298 @@ def render_price_sweep_decision_chart(
         )
 
 
+# =============================================================================
+# HISTORICAL ANALYTICS RENDERERS (Page A, B, C)
+# =============================================================================
+
+def render_market_overview(data: pd.DataFrame, baseline: pd.DataFrame) -> None:
+    """Page A — Market Overview: Monthly units/liters/revenue, YoY, segment shares, drill-downs."""
+    st.subheader("📊 Market Overview")
+    st.caption("Descriptive analysis of observed data. Not a forecast or causal estimate.")
+    
+    # Enrich data with derived measures
+    from .analytics import enrich_with_derived, compute_all_aggregations, compute_all_shares, MONTH_NAMES
+    
+    enriched = enrich_with_derived(data)
+    aggs = compute_all_aggregations(enriched)
+    shares = compute_all_shares(aggs["total_market"])
+    
+    # Key metrics row
+    total_units = enriched["Unit_Sales"].sum()
+    total_liters = enriched["Liters"].sum()
+    total_revenue = enriched["Sales_Revenue"].sum()
+    total_skus = enriched["SKU"].nunique()
+    total_retailers = enriched["Retailer"].nunique()
+    total_categories = enriched["Category"].nunique() if "Category" in enriched.columns else 0
+    n_months = enriched["Period"].nunique()
+    n_years = n_months / 12.0
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Units", f"{total_units:,.0f}")
+        st.metric("Total Liters", f"{total_liters:,.1f}")
+    with col2:
+        st.metric("Total Revenue", f"{total_revenue:,.2f}")
+        st.metric("Avg Unit Value", f"{total_revenue/total_units:.2f}" if total_units > 0 else "N/A")
+    with col3:
+        st.metric("SKUs", f"{total_skus}")
+        st.metric("Retailers", f"{total_retailers}")
+    with col4:
+        st.metric("Categories", f"{total_categories}")
+        st.metric("Months of Data", f"{n_months} ({n_years:.1f} years)")
+    
+    # Time series charts
+    st.subheader("Monthly Trends")
+    monthly = enriched.groupby("Period", as_index=False).agg(
+        Units=("Unit_Sales", "sum"),
+        Liters=("Liters", "sum"),
+        Revenue=("Sales_Revenue", "sum"),
+    ).sort_values("Period")
+    
+    fig_units = go.Figure()
+    fig_units.add_trace(go.Scatter(
+        x=monthly["Period"], y=monthly["Units"],
+        mode="lines+markers", name="Units", line=dict(color="#1f77b4")
+    ))
+    fig_units.update_layout(title="Monthly Units", xaxis_title="Period", yaxis_title="Units", height=300)
+    st.plotly_chart(fig_units, use_container_width=True)
+    
+    fig_liters = go.Figure()
+    fig_liters.add_trace(go.Scatter(
+        x=monthly["Period"], y=monthly["Liters"],
+        mode="lines+markers", name="Liters", line=dict(color="#2ca02c")
+    ))
+    fig_liters.update_layout(title="Monthly Liters", xaxis_title="Period", yaxis_title="Liters", height=300)
+    st.plotly_chart(fig_liters, use_container_width=True)
+    
+    fig_rev = go.Figure()
+    fig_rev.add_trace(go.Scatter(
+        x=monthly["Period"], y=monthly["Revenue"],
+        mode="lines+markers", name="Revenue", line=dict(color="#ff7f0e")
+    ))
+    fig_rev.update_layout(title="Monthly Revenue", xaxis_title="Period", yaxis_title="Revenue", height=300)
+    st.plotly_chart(fig_rev, use_container_width=True)
+    
+    # Segment shares
+    st.subheader("Segment Shares (Revenue)")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if "total_category" in shares:
+            st.markdown("**Category Shares**")
+            cat_shares = shares["total_category"]
+            cat_shares = cat_shares[["Category", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"]].copy()
+            cat_shares.columns = ["Category", "Baseline %", "Current %", "Change (pp)"]
+            st.dataframe(cat_shares.style.format({"Baseline %": "{:.1f}%", "Current %": "{:.1f}%", "Change (pp)": "{:+.1f} pp"}), hide_index=True, use_container_width=True)
+        else:
+            st.info("Category shares not available (Category column not in total market aggregation)")
+    
+    with col2:
+        if "total_retailer" in shares:
+            st.markdown("**Retailer Shares**")
+            ret_shares = shares["total_retailer"]
+            ret_shares = ret_shares[["Retailer", "Baseline_Share_Pct", "Simulated_Share_Pct", "Share_Change_pp"]].copy()
+            ret_shares.columns = ["Retailer", "Baseline %", "Current %", "Change (pp)"]
+            st.dataframe(ret_shares.style.format({"Baseline %": "{:.1f}%", "Current %": "{:.1f}%", "Change (pp)": "{:+.1f} pp"}), hide_index=True, use_container_width=True)
+        else:
+            st.info("Retailer shares not available (Retailer column not in total market aggregation)")
+    
+    # Top SKUs table
+    st.subheader("Top SKUs by Revenue (Baseline Month)")
+    baseline_month = data[data["Period"] == data["Period"].max()].copy()
+    baseline_month = enrich_with_derived(baseline_month)
+    top_skus = baseline_month.sort_values("Sales_Revenue", ascending=False).head(20)
+    display_cols = ["Category", "Retailer", "Brand", "SKU", "Pack_Size", "Unit_Sales", "Liters", "Sales_Revenue", "Unit_Value"]
+    available_cols = [c for c in display_cols if c in top_skus.columns]
+    st.dataframe(
+        top_skus[available_cols].style.format({
+            "Unit_Sales": "{:,.0f}", "Liters": "{:,.1f}", "Sales_Revenue": "{:,.2f}", "Unit_Value": "{:.2f}"
+        }),
+        hide_index=True, use_container_width=True
+    )
+    
+    # Data coverage warning
+    n_years = n_months / 12.0
+    if n_years < 2:
+        st.warning(f"⚠️ Only {n_years:.1f} years of data; seasonal patterns cannot be distinguished from trend or noise.")
+
+
+def render_historical_changes(data: pd.DataFrame, baseline: pd.DataFrame) -> None:
+    """Page B — What Changed? Period comparison, additive contributions, waterfalls."""
+    st.subheader("🔍 What Changed?")
+    st.caption("Accounting decomposition of observed data; does not establish why prices, product mix, or sales changed.")
+    
+    from .analytics import enrich_with_derived, full_revenue_bridge
+    
+    enriched = enrich_with_derived(data)
+    periods = sorted(data["Period"].unique())
+    
+    if len(periods) < 2:
+        st.info("Need at least two periods for change analysis.")
+        return
+    
+    # Period selector
+    col1, col2 = st.columns(2)
+    with col1:
+        baseline_period = st.selectbox("Baseline Period", periods[:-1], index=len(periods)-2, format_func=lambda p: f"Period {p}")
+    with col2:
+        comparison_period = st.selectbox("Comparison Period", [p for p in periods if p > baseline_period], index=0, format_func=lambda p: f"Period {p}")
+    
+    baseline_df = data[data["Period"] == baseline_period].copy()
+    comparison_df = data[data["Period"] == comparison_period].copy()
+    
+    baseline_df = enrich_with_derived(baseline_df)
+    comparison_df = enrich_with_derived(comparison_df)
+    
+    # Overall changes
+    r0 = baseline_df["Sales_Revenue"].sum()
+    r1 = comparison_df["Sales_Revenue"].sum()
+    q0 = baseline_df["Unit_Sales"].sum()
+    q1 = comparison_df["Unit_Sales"].sum()
+    l0 = baseline_df["Liters"].sum()
+    l1 = comparison_df["Liters"].sum()
+    
+    st.subheader("Overall Market Change")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Revenue Change", f"{r1 - r0:+,.2f}", f"{100*(r1/r0-1):+.2f}%")
+    with col2:
+        st.metric("Volume Change (Units)", f"{q1 - q0:+,.0f}", f"{100*(q1/q0-1):+.2f}%")
+    with col3:
+        st.metric("Volume Change (Liters)", f"{l1 - l0:+,.1f}", f"{100*(l1/l0-1):+.2f}%")
+    
+    # Revenue bridge
+    st.subheader("Revenue Bridge (Accounting Decomposition)")
+    bridge = full_revenue_bridge(baseline_df, comparison_df)
+    
+    # Waterfall chart
+    waterfall_data = {
+        "Baseline Revenue": bridge["baseline_revenue"],
+    }
+    for comp in bridge["components"]:
+        waterfall_data[comp["label"]] = comp["value"]
+    waterfall_data["Comparison Revenue"] = bridge["comparison_revenue"]
+    
+    fig = go.Figure(go.Waterfall(
+        name="Revenue Bridge",
+        orientation="v",
+        measure=["absolute"] + ["relative"] * len(bridge["components"]) + ["total"],
+        x=list(waterfall_data.keys()),
+        y=list(waterfall_data.values()),
+        text=[f"{v:+,.2f}" for v in waterfall_data.values()],
+        textposition="outside",
+        connector={"line": {"color": "rgb(63, 63, 63)"}},
+        increasing={"marker": {"color": "#2ca02c"}},
+        decreasing={"marker": {"color": "#d62728"}},
+        totals={"marker": {"color": "#1f77b4"}},
+        hovertemplate="<b>%{x}</b><br>Value: %{y:,.2f}<extra></extra>",
+    ))
+    fig.update_layout(title="Revenue Bridge: Baseline → Comparison (Observed Data)", yaxis_title="Revenue", height=400)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Component table
+    st.markdown("**Bridge Components**")
+    comp_df = pd.DataFrame(bridge["components"])
+    st.dataframe(comp_df[["label", "value", "description", "provenance"]].style.format({"value": "{:+,.2f}"}), hide_index=True, use_container_width=True)
+    
+    # Reconciliation check
+    st.caption(f"✅ Accounting reconciliation: {'PASS' if bridge['reconciliation_check'] else 'FAIL'} (modeled {sum(c['value'] for c in bridge['components']):,.2f} vs actual {bridge['total_change']:,.2f})")
+    
+    # Segment contributions
+    st.subheader("Segment Contributions to Revenue Change")
+    
+    # Category contributions
+    cat_changes = []
+    for cat in sorted(baseline_df["Category"].unique()):
+        b = baseline_df[baseline_df["Category"] == cat]["Sales_Revenue"].sum()
+        c = comparison_df[comparison_df["Category"] == cat]["Sales_Revenue"].sum()
+        cat_changes.append({"Category": cat, "Baseline": b, "Comparison": c, "Delta": c - b, "Delta%": 100*(c/b-1) if b != 0 else 0})
+    
+    cat_df = pd.DataFrame(cat_changes)
+    st.dataframe(cat_df.style.format({"Baseline": "{:,.2f}", "Comparison": "{:,.2f}", "Delta": "{:+,.2f}", "Delta%": "{:+.2f}%"}), hide_index=True, use_container_width=True)
+    
+    # Brand within category
+    cat_selected = st.selectbox("Select Category for Brand Detail", sorted(baseline_df["Category"].unique()))
+    brand_changes = []
+    b_cat = baseline_df[baseline_df["Category"] == cat_selected]
+    c_cat = comparison_df[comparison_df["Category"] == cat_selected]
+    for brand in sorted(b_cat["Brand"].unique()):
+        b = b_cat[b_cat["Brand"] == brand]["Sales_Revenue"].sum()
+        c = c_cat[c_cat["Brand"] == brand]["Sales_Revenue"].sum()
+        brand_changes.append({"Brand": brand, "Baseline": b, "Comparison": c, "Delta": c - b, "Delta%": 100*(c/b-1) if b != 0 else 0})
+    
+    if brand_changes:
+        brand_df = pd.DataFrame(brand_changes)
+        st.dataframe(brand_df.style.format({"Baseline": "{:,.2f}", "Comparison": "{:,.2f}", "Delta": "{:+,.2f}", "Delta%": "{:+.2f}%"}), hide_index=True, use_container_width=True)
+
+
+def render_seasonality_analysis(data: pd.DataFrame) -> None:
+    """Page C — Seasonality Analysis."""
+    st.subheader("📈 Seasonality Analysis")
+    st.caption("Descriptive seasonal patterns. A twelve-month pattern from a single year is not evidence of recurring seasonality.")
+    
+    from .analytics import enrich_with_derived, compute_seasonal_profile, compute_seasonal_strength, compute_month_over_month, format_seasonal_profile, seasonal_insufficient_years_warning, MONTH_NAMES
+    
+    enriched = enrich_with_derived(data)
+    periods = sorted(data["Period"].unique())
+    n_months = len(periods)
+    n_years = n_months / 12.0
+    
+    # Warning
+    if n_years < 2:
+        st.warning(f"⚠️ {seasonal_insufficient_years_warning(n_years)}")
+    
+    # Category selector
+    categories = sorted(data["Category"].unique())
+    selected_cat = st.selectbox("Category", categories)
+    
+    cat_data = data[data["Category"] == selected_cat].copy()
+    cat_data = enrich_with_derived(cat_data)
+    
+    # Seasonal profile
+    profile = compute_seasonal_profile(cat_data, ["Category"], "Sales_Revenue", season_column="Season")
+    profile = format_seasonal_profile(profile)
+    
+    # Chart
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=profile["Month_Name"],
+        y=profile["Sales_Revenue_seasonal_index"],
+        name="Seasonal Index",
+        marker_color="#1f77b4"
+    ))
+    fig.add_hline(y=1.0, line_dash="dash", line_color="red", annotation_text="Average (1.0)")
+    fig.update_layout(title=f"Seasonal Profile: {selected_cat} Revenue Index", xaxis_title="Month", yaxis_title="Index (1.0 = Average)", height=350)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Seasonal strength metrics
+    strength = compute_seasonal_strength(cat_data, ["Category"], "Sales_Revenue", season_column="Season")
+    if len(strength) > 0:
+        s = strength.iloc[0]
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Peak-to-Trough Ratio", f"{s.get('peak_to_trough_ratio', 0):.2f}")
+        with col2:
+            st.metric("Seasonal Amplitude", f"{s.get('seasonal_amplitude_pct', 0):.1f}%")
+        with col3:
+            st.metric("Peak Month", MONTH_NAMES.get(int(s.get('peak_month', 1)), "N/A"))
+    
+    # Month-over-month
+    st.subheader("Month-over-Month Changes")
+    mom = compute_month_over_month(cat_data, ["Category"], "Sales_Revenue")
+    mom = mom.sort_values("Period").tail(12)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=mom["Period"].astype(str),
+        y=mom["Sales_Revenue_pct_change_1"],
+        name="MoM % Change",
+        marker_color=np.where(mom["Sales_Revenue_pct_change_1"] >= 0, "#2ca02c", "#d62728")
+    ))
+    fig.add_hline(y=0, line_color="black")
+    fig.update_layout(title="Month-over-Month Revenue % Change", xaxis_title="Period", yaxis_title="% Change", height=300)
+    st.plotly_chart(fig, use_container_width=True)
+
+
 @st.cache_data(show_spinner=False, max_entries=4)
 def cached_load(path: str, modified_ns: int) -> tuple:
     return load_data(path, modified_ns)
@@ -1469,6 +1768,26 @@ def main() -> None:
     st.session_state.setdefault(reset_key, 0)
     
     baseline_period = int(baseline["Period"].max())
+    
+    # ============================================================
+    # HISTORICAL ANALYTICS TABS (Page A & B)
+    # ============================================================
+    hist_tab1, hist_tab2, hist_tab3, hist_tab4 = st.tabs([
+        "📊 Market Overview", "🔍 What Changed?", "📈 Seasonality", "⚙️ Scenario Engine"
+    ])
+    
+    with hist_tab1:
+        render_market_overview(data, baseline)
+    
+    with hist_tab2:
+        render_historical_changes(data, baseline)
+    
+    with hist_tab3:
+        render_seasonality_analysis(data)
+    
+    with hist_tab4:
+        # Scenario engine content continues below
+        pass
     
     # Mode selector
     st.subheader("Simulation mode")
